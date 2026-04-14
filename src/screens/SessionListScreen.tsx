@@ -66,17 +66,13 @@ export default function SessionListScreen({ onShowTests }: { onShowTests?: () =>
 
   return (
     <View style={[st.container, { backgroundColor: t.bg }]}>
-      {/* Header with ASCII logo */}
+      {/* Header */}
       <View style={[st.header, { borderBottomColor: t.border }]}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 8, lineHeight: 10 }}>
-{` ██████╗  ██████╗ ██████╗ ██████╗ ███╗   ██╗
-██╔══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║
-███████║██║     ██║   ██║██████╔╝██╔██╗ ██║
-██╔══██║██║     ██║   ██║██╔══██╗██║╚██╗██║
-██║  ██║╚██████╗╚██████╔╝██║  ██║██║ ╚████║
-╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝`}
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 18, fontWeight: '700' }}>
+            🌰 ACORN
           </Text>
+          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11 }}>companion</Text>
         </View>
         <View style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           {onShowTests && (
