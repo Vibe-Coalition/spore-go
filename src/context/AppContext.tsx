@@ -342,17 +342,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Load saved theme on mount
+  const themeLoaded = useRef(false);
   useEffect(() => {
     AsyncStorage.getItem('acorn_theme').then(saved => {
+      console.log('[Theme] loaded from storage:', saved);
       if (saved) dispatch({ type: 'SET_THEME', name: saved });
-    }).catch(() => {});
+      themeLoaded.current = true;
+    }).catch((e) => { console.warn('[Theme] load failed:', e); themeLoaded.current = true; });
   }, []);
 
-  // Persist theme when it changes
+  // Persist theme when it changes — skip the initial load to avoid race
   useEffect(() => {
-    if (state.themeName !== DEFAULT_THEME || state.screen !== 'auth') {
-      AsyncStorage.setItem('acorn_theme', state.themeName).catch(() => {});
-    }
+    if (!themeLoaded.current) return;
+    console.log('[Theme] saving:', state.themeName);
+    AsyncStorage.setItem('acorn_theme', state.themeName)
+      .then(() => console.log('[Theme] saved OK'))
+      .catch((e) => console.warn('[Theme] save failed:', e));
   }, [state.themeName]);
 
   // Wire WebSocket events → dispatch
