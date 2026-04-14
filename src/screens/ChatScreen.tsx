@@ -82,16 +82,18 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     { text: 'Yes', style: 'destructive', onPress: () => { ws.current?.send({ type: 'chat:clear', sessionId: session.key }); dispatch({ type: 'CLEAR_MESSAGES' }); } },
   ]);
   const handleQuestionSubmit = (formatted: string) => { dispatch({ type: 'SET_QUESTIONS', questions: null }); sendMessage(formatted); };
+  // Plan decisions — send control messages to CLI, let CLI handle the actual flow
   const handlePlanExecute = () => {
     dispatch({ type: 'SET_PLAN_APPROVAL', text: null });
-    dispatch({ type: 'SET_PLAN_MODE', on: false });
-    ws.current?.send({ type: 'plan:set-mode', enabled: false }); // sync CLI to exec mode
-    dispatch({ type: 'SEND_MESSAGE', text: '▶ Execute plan' });
-    ws.current?.sendMessage(PLAN_EXECUTE_MSG, session.key, state.credentials!.username);
+    ws.current?.send({ type: 'plan:decision', action: 'execute' });
   };
   const handlePlanRevise = (feedback: string) => {
-    dispatch({ type: 'SET_PLAN_APPROVAL', text: null }); dispatch({ type: 'SEND_MESSAGE', text: feedback });
-    ws.current?.sendMessage(`[PLAN FEEDBACK: Revise the plan. Stay in plan mode.]\n\n${feedback}`, session.key, state.credentials!.username);
+    dispatch({ type: 'SET_PLAN_APPROVAL', text: null });
+    ws.current?.send({ type: 'plan:decision', action: 'revise', feedback });
+  };
+  const handlePlanCancel = () => {
+    dispatch({ type: 'SET_PLAN_APPROVAL', text: null });
+    ws.current?.send({ type: 'plan:decision', action: 'cancel' });
   };
 
   // ── Terminal-style renderers ──
@@ -242,7 +244,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
 
       {/* ── Modals ── */}
       {questions && <QuestionSheet questions={questions} onSubmit={handleQuestionSubmit} onCancel={() => dispatch({ type: 'SET_QUESTIONS', questions: null })} />}
-      {planApproval && <PlanApprovalSheet planText={planApproval} onExecute={handlePlanExecute} onRevise={handlePlanRevise} onCancel={() => dispatch({ type: 'SET_PLAN_APPROVAL', text: null })} />}
+      {planApproval && <PlanApprovalSheet planText={planApproval} onExecute={handlePlanExecute} onRevise={handlePlanRevise} onCancel={handlePlanCancel} />}
 
       {/* ── Actions panel ── */}
       {showActions && (

@@ -421,6 +421,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: 'SET_PERM_MODE', mode: event.mode });
         }
         break;
+      case 'plan:decided':
+        // CLI made a plan decision — dismiss our approval UI
+        dispatch({ type: 'SET_PLAN_APPROVAL', text: null });
+        if (event.action === 'execute') dispatch({ type: 'SET_PLAN_MODE', on: false });
+        break;
+      case 'plan:set-mode':
+        dispatch({ type: 'SET_PLAN_MODE', on: !!event.enabled });
+        break;
     }
   }, []);
 
