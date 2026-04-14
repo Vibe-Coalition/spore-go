@@ -7,7 +7,7 @@ import { authenticate, saveCredentials, loadCredentials } from '../services/auth
 import { useApp } from '../context/AppContext';
 import { Credentials } from '../types';
 
-const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+import { MONO_FONT as MONO } from '../context/AppContext';
 
 export default function AuthScreen() {
   const { dispatch, theme: t } = useApp();
@@ -54,7 +54,7 @@ export default function AuthScreen() {
 
   return (
     <KeyboardAvoidingView style={[s.container, { backgroundColor: t.bg }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={'padding'}>
       <View style={[s.card, { borderColor: t.border }]}>
         <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14, textAlign: 'center', marginBottom: 4 }}>
           ┌{'─'.repeat(28)}┐

@@ -11,7 +11,7 @@ import { parseQuestions, formatAnswers, Question } from '../utils/questions';
 import { hasPlanReady, parseFileSummary, PLAN_PREFIX, PLAN_EXECUTE_MSG } from '../utils/plan';
 import { listThemes, THEMES, getTheme } from '../themes';
 
-const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+import { MONO_FONT as MONO } from '../context/AppContext';
 
 interface TestResult { name: string; pass: boolean; detail: string }
 

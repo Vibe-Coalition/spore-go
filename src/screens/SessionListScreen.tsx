@@ -8,7 +8,7 @@ import { useApp } from '../context/AppContext';
 import { listThemes, THEMES } from '../themes';
 import { Session } from '../types';
 
-const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+import { MONO_FONT as MONO } from '../context/AppContext';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + (dateStr.includes('Z') ? '' : 'Z')).getTime();
@@ -69,10 +69,14 @@ export default function SessionListScreen({ onShowTests }: { onShowTests?: () =>
       {/* Header */}
       <View style={[st.header, { borderBottomColor: t.border }]}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 18, fontWeight: '700' }}>
-            🌰 ACORN
-          </Text>
-          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11 }}>companion</Text>
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5 }} allowFontScaling={false}>{
+` ██████╗  ██████╗ ██████╗ ██████╗ ███╗   ██╗\n` +
+`██╔══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║\n` +
+`███████║██║     ██║   ██║██████╔╝██╔██╗ ██║\n` +
+`██╔══██║██║     ██║   ██║██╔══██╗██║╚██╗██║\n` +
+`██║  ██║╚██████╗╚██████╔╝██║  ██║██║ ╚████║\n` +
+`╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝`
+          }</Text>
         </View>
         <View style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           {onShowTests && (

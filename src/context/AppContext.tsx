@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, useCallback, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Font from 'expo-font';
 import { AcornWebSocket } from '../services/websocket';
 import { parseQuestions } from '../utils/questions';
 import { hasPlanReady } from '../utils/plan';
@@ -302,10 +304,20 @@ export function useApp() {
 
 // ── Provider ──
 
+export const MONO_FONT = 'JetBrainsMono';
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
   const wsRef = useRef<AcornWebSocket | null>(null);
   const theme = getTheme(state.themeName);
+
+  // Load custom font
+  useEffect(() => {
+    Font.loadAsync({
+      'JetBrainsMono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
+    }).then(() => setFontsLoaded(true)).catch(() => setFontsLoaded(true)); // continue even if font fails
+  }, []);
 
   // Load saved theme on mount
   useEffect(() => {
@@ -390,6 +402,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ws.connect();
     return () => { ws.disconnect(); wsRef.current = null; };
   }, [state.credentials?.token, state.credentials?.serverUrl, handleWsEvent, handleConnState]);
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}><ActivityIndicator color={theme.accent} /></View>;
+  }
 
   return (
     <AppContext.Provider value={{ state, dispatch, theme, ws: wsRef }}>

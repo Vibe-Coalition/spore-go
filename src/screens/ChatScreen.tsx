@@ -12,7 +12,7 @@ import QuestionSheet from '../components/QuestionSheet';
 import PlanApprovalSheet from '../components/PlanApprovalSheet';
 import { ChatItem } from '../types';
 
-const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+import { MONO_FONT as MONO } from '../context/AppContext';
 
 export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }) {
   const { state, dispatch, theme: t, ws } = useApp();
@@ -271,7 +271,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
 }
 
 function CmdRow({ label, icon, desc, color, onPress }: { label: string; icon: string; desc: string; color: string; onPress: () => void }) {
-  const MONO_F = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+  const MONO_F = MONO;
   return (
     <TouchableOpacity style={st.cmdRow} onPress={onPress}>
       <Text style={{ fontFamily: MONO_F, fontSize: 13, color }}> {icon} /{label}</Text>
