@@ -237,8 +237,8 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
           </Text>
         )}
         <View style={st.inputRow}>
-          <TouchableOpacity onPress={() => setShowActions(true)} style={st.cmdBtn}>
-            <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14 }}>{'>'}</Text>
+          <TouchableOpacity onPress={() => setShowActions(true)} style={[st.cmdBtn, { borderWidth: 1, borderColor: t.accent }]}>
+            <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 11 }}>{'/>'}</Text>
           </TouchableOpacity>
           <TextInput ref={useRef(null)} style={[st.textInput, { color: t.fg, fontFamily: MONO, borderColor: t.border, backgroundColor: t.bgInput }]}
             placeholder={planMode ? 'plan>' : '>'} placeholderTextColor={t.muted}
