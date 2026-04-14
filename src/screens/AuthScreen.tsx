@@ -24,14 +24,9 @@ export default function AuthScreen({ onAuth }: Props) {
     (async () => {
       const saved = await loadCredentials();
       if (saved?.key) {
-        const refreshed = await refreshToken(saved);
-        if (refreshed) {
-          onAuth(refreshed);
-        } else {
-          setServerUrl(saved.serverUrl);
-          setUsername(saved.username);
-          setKey(saved.key);
-        }
+        // Navigate immediately with saved creds — token refresh happens
+        // lazily on first API call (fetchSessions handles 401 → refresh)
+        onAuth(saved);
       }
       setChecking(false);
     })();

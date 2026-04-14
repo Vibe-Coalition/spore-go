@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   RefreshControl, ActivityIndicator, Modal, ScrollView,
@@ -36,9 +36,13 @@ export default function SessionListScreen({ credentials, onSelectSession, onLogo
   const [error, setError] = useState('');
   const [showThemes, setShowThemes] = useState(false);
 
+  const loadingRef = useRef(false);
   const load = useCallback(async (isRefresh = false) => {
+    if (loadingRef.current) return; // prevent overlapping fetches
+    loadingRef.current = true;
     if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+    // Only show full spinner on first load when we have no data
+    if (sessions.length === 0 && !isRefresh) setLoading(true);
     setError('');
     try {
       const result = await fetchSessions(credentials);
@@ -47,16 +51,18 @@ export default function SessionListScreen({ credentials, onSelectSession, onLogo
         onTokenRefresh(result.credentials);
       }
     } catch (e: any) {
-      setError(e.message);
+      // Only show error if we have no data — silent fail on background refresh
+      if (sessions.length === 0) setError(e.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      loadingRef.current = false;
     }
-  }, [credentials]);
+  }, [credentials, sessions.length]);
 
   useEffect(() => {
     load();
-    const interval = setInterval(() => load(), 30000);
+    const interval = setInterval(() => load(), 10000);
     return () => clearInterval(interval);
   }, [load]);
 

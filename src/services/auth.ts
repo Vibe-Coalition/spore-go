@@ -27,6 +27,7 @@ export async function authenticate(serverUrl: string, username: string, key: str
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, key }),
+    signal: AbortSignal.timeout(8000),
   });
   const data = await res.json();
   if (!res.ok || !data.token) {
@@ -59,6 +60,7 @@ export async function fetchSessions(
 ): Promise<{ sessions: Session[]; credentials: Credentials }> {
   let res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
     headers: { Authorization: `Bearer ${creds.token}` },
+    signal: AbortSignal.timeout(8000),
   });
 
   // Token expired (server restart clears in-memory tokens) — re-auth
@@ -68,6 +70,7 @@ export async function fetchSessions(
     creds = refreshed;
     res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
       headers: { Authorization: `Bearer ${creds.token}` },
+      signal: AbortSignal.timeout(8000),
     });
   }
 
