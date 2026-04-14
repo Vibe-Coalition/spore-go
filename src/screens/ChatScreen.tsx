@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, KeyboardAvoidingView, Platform, Modal, ScrollView, Alert,
+  StyleSheet, KeyboardAvoidingView, Platform, Modal, ScrollView,
+  Alert, LayoutAnimation, UIManager, Keyboard,
 } from 'react-native';
 import { AcornWebSocket } from '../services/websocket';
 import { parseQuestions, Question, formatAnswers } from '../utils/questions';
@@ -11,6 +12,11 @@ import { listThemes, THEMES } from '../themes';
 import QuestionSheet from '../components/QuestionSheet';
 import PlanApprovalSheet from '../components/PlanApprovalSheet';
 import { Credentials, Session, ChatMessage, WsEvent, ConnectionState, ToolStatus, Usage } from '../types';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 interface Props {
   credentials: Credentials;
@@ -33,11 +39,14 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
   const [lastUsage, setLastUsage] = useState<{ usage?: Usage; iterations?: number; toolUsage?: Record<string, number> } | null>(null);
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [planApprovalText, setPlanApprovalText] = useState<string | null>(null);
-  const [showMenu, setShowMenu] = useState(false);
+  const [inputExpanded, setInputExpanded] = useState(false);
   const [showThemes, setShowThemes] = useState(false);
   const wsRef = useRef<AcornWebSocket | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
   const streamRef = useRef('');
+
+  // ── WebSocket events ──
 
   const handleEvent = useCallback((event: WsEvent) => {
     switch (event.type) {
@@ -77,9 +86,7 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
       }
       case 'chat:error':
         setMessages(prev => [...prev, { id: `msg-${++msgId}`, role: 'assistant', text: `Error: ${event.error}` }]);
-        setIsGenerating(false);
-        setStreamingText('');
-        streamRef.current = '';
+        setIsGenerating(false); setStreamingText(''); streamRef.current = '';
         break;
       case 'chat:history':
         if (event.messages?.length) {
@@ -91,16 +98,10 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
         }
         break;
       case 'chat:status':
-        if (event.status === 'tool_exec_start') {
-          setToolStatus({ tool: event.tool || '', detail: event.detail, status: 'running' });
-        } else if (event.status === 'tool_exec_done') {
-          setToolStatus(prev => prev ? { ...prev, status: 'done', durationMs: event.durationMs } : null);
-          setTimeout(() => setToolStatus(null), 2000);
-        } else if (event.status === 'thinking_start') {
-          setToolStatus({ tool: 'thinking', status: 'running' });
-        } else if (event.status === 'thinking_done') {
-          setToolStatus(null);
-        }
+        if (event.status === 'tool_exec_start') setToolStatus({ tool: event.tool || '', detail: event.detail, status: 'running' });
+        else if (event.status === 'tool_exec_done') { setToolStatus(prev => prev ? { ...prev, status: 'done', durationMs: event.durationMs } : null); setTimeout(() => setToolStatus(null), 2000); }
+        else if (event.status === 'thinking_start') setToolStatus({ tool: 'thinking', status: 'running' });
+        else if (event.status === 'thinking_done') setToolStatus(null);
         break;
     }
   }, [planMode]);
@@ -110,11 +111,7 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
     wsRef.current = ws;
     ws.connect();
     const check = setInterval(() => {
-      if (ws['ws']?.readyState === WebSocket.OPEN) {
-        ws.observe(session.key);
-        ws.requestHistory(session.key);
-        clearInterval(check);
-      }
+      if (ws['ws']?.readyState === WebSocket.OPEN) { ws.observe(session.key); ws.requestHistory(session.key); clearInterval(check); }
     }, 200);
     return () => { clearInterval(check); ws.unobserve(session.key); ws.disconnect(); };
   }, [credentials, session.key, handleEvent]);
@@ -123,12 +120,37 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   }, [messages, streamingText]);
 
+  // Collapse input when keyboard hides
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidHide', () => {
+      if (inputExpanded && !input.trim()) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setInputExpanded(false);
+      }
+    });
+    return () => sub.remove();
+  }, [inputExpanded, input]);
+
   // ── Actions ──
+
+  const expandInput = () => {
+    if (!inputExpanded) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setInputExpanded(true);
+    }
+  };
+
+  const collapseInput = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setInputExpanded(false);
+    Keyboard.dismiss();
+  };
 
   const sendMessage = (text?: string) => {
     const msg = (text || input).trim();
     if (!msg || !wsRef.current) return;
     if (!text) setInput('');
+    collapseInput();
     setMessages(prev => [...prev, { id: `msg-${++msgId}`, role: 'user', text: msg }]);
     const content = planMode ? PLAN_PREFIX + msg : msg;
     wsRef.current.sendMessage(content, session.key, credentials.username);
@@ -137,22 +159,16 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
   const handleStop = () => wsRef.current?.stop(session.key);
 
   const handleClear = () => {
-    Alert.alert('Clear Session', 'Clear all messages in this session?', [
+    Alert.alert('Clear Session', 'Clear all messages?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear', style: 'destructive',
-        onPress: () => {
-          wsRef.current?.send({ type: 'chat:clear', sessionId: session.key });
-          setMessages([]);
-        },
-      },
+      { text: 'Clear', style: 'destructive', onPress: () => {
+        wsRef.current?.send({ type: 'chat:clear', sessionId: session.key });
+        setMessages([]);
+      }},
     ]);
   };
 
-  const handleQuestionSubmit = (formatted: string) => {
-    setQuestions(null);
-    sendMessage(formatted);
-  };
+  const handleQuestionSubmit = (formatted: string) => { setQuestions(null); sendMessage(formatted); };
 
   const handlePlanExecute = () => {
     setPlanApprovalText(null);
@@ -163,9 +179,8 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
 
   const handlePlanRevise = (feedback: string) => {
     setPlanApprovalText(null);
-    const msg = `[PLAN FEEDBACK: Revise the plan. Stay in plan mode.]\n\n${feedback}`;
     setMessages(prev => [...prev, { id: `msg-${++msgId}`, role: 'user', text: feedback }]);
-    wsRef.current?.sendMessage(msg, session.key, credentials.username);
+    wsRef.current?.sendMessage(`[PLAN FEEDBACK: Revise the plan. Stay in plan mode.]\n\n${feedback}`, session.key, credentials.username);
   };
 
   // ── Render ──
@@ -173,11 +188,7 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     return (
-      <View style={[
-        s.bubble,
-        { backgroundColor: isUser ? t.accent : t.bgPanel, borderColor: isUser ? t.accent : t.border },
-        isUser ? s.userBubble : s.assistantBubble,
-      ]}>
+      <View style={[s.bubble, { backgroundColor: isUser ? t.accent : t.bgPanel, borderColor: isUser ? t.accent : t.border }, isUser ? s.userBubble : s.assistantBubble]}>
         <Text style={[s.roleLabel, { color: isUser ? t.bg + 'cc' : t.muted }]}>
           {isUser ? credentials.username : 'acorn'}
         </Text>
@@ -189,15 +200,16 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
   const connColor = connState === 'connected' ? t.success : connState === 'connecting' ? t.warning : t.error;
 
   return (
-    <KeyboardAvoidingView style={[s.container, { backgroundColor: t.bg }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-
+    <KeyboardAvoidingView
+      style={[s.container, { backgroundColor: t.bg }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
       {/* ── Header ── */}
       <View style={[s.header, { backgroundColor: t.bgHeader, borderBottomColor: t.border }]}>
-        <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
           <Text style={{ color: t.accent, fontSize: 22 }}>‹</Text>
         </TouchableOpacity>
-
         <View style={s.headerCenter}>
           <Text style={{ color: t.fg, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{session.project}</Text>
           <View style={s.headerMeta}>
@@ -205,21 +217,10 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
             <Text style={{ color: t.muted, fontSize: 10 }}>{connState}</Text>
           </View>
         </View>
-
-        {/* Mode toggle pill */}
-        <TouchableOpacity
-          style={[s.modePill, { backgroundColor: planMode ? t.planLabelBg : t.execLabelBg }]}
-          onPress={onTogglePlan}
-        >
+        <TouchableOpacity style={[s.modePill, { backgroundColor: planMode ? t.planLabelBg : t.execLabelBg }]} onPress={onTogglePlan}>
           <Text style={{ color: planMode ? t.planLabel : t.execLabel, fontSize: 11, fontWeight: '700' }}>
             {planMode ? 'PLAN' : 'EXEC'}
           </Text>
-        </TouchableOpacity>
-
-        {/* Menu */}
-        <TouchableOpacity onPress={() => setShowMenu(true)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 10 }}>
-          <Text style={{ color: t.muted, fontSize: 20 }}>⋮</Text>
         </TouchableOpacity>
       </View>
 
@@ -227,13 +228,13 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
       {(toolStatus || isGenerating) && (
         <View style={[s.activityBar, { backgroundColor: t.bgHeader + 'dd', borderBottomColor: t.border }]}>
           {toolStatus ? (
-            <Text style={{ color: t.toolIcon, fontSize: 12 }}>
+            <Text style={{ color: t.toolIcon, fontSize: 12, flex: 1 }} numberOfLines={1}>
               {toolStatus.status === 'running' ? '⚙' : '✓'} {toolStatus.tool}
               {toolStatus.detail ? ` ${toolStatus.detail}` : ''}
               {toolStatus.durationMs ? ` (${toolStatus.durationMs}ms)` : ''}
             </Text>
           ) : (
-            <Text style={{ color: t.thinking, fontSize: 12 }}>● Generating...</Text>
+            <Text style={{ color: t.thinking, fontSize: 12, flex: 1 }}>● Generating...</Text>
           )}
           {isGenerating && (
             <TouchableOpacity onPress={handleStop} style={[s.stopChip, { backgroundColor: t.error }]}>
@@ -250,6 +251,9 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
         keyExtractor={item => item.id}
         renderItem={renderMessage}
         contentContainerStyle={s.messageList}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={() => { if (inputExpanded && !input.trim()) collapseInput(); }}
         ListFooterComponent={
           <>
             {streamingText ? (
@@ -262,75 +266,79 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
             ) : null}
             {lastUsage?.usage && (
               <Text style={[s.usageText, { color: t.usage }]}>
-                {(lastUsage.usage.input_tokens || 0).toLocaleString()} in  ·  {(lastUsage.usage.output_tokens || 0).toLocaleString()} out
-                {lastUsage.iterations && lastUsage.iterations > 1 ? `  ·  ${lastUsage.iterations} iters` : ''}
-                {lastUsage.toolUsage ? `  ·  ${Object.values(lastUsage.toolUsage).reduce((a: number, b: number) => a + b, 0)} tools` : ''}
+                {(lastUsage.usage.input_tokens || 0).toLocaleString()} in · {(lastUsage.usage.output_tokens || 0).toLocaleString()} out
+                {lastUsage.iterations && lastUsage.iterations > 1 ? ` · ${lastUsage.iterations} iters` : ''}
+                {lastUsage.toolUsage ? ` · ${Object.values(lastUsage.toolUsage).reduce((a: number, b: number) => a + b, 0)} tools` : ''}
               </Text>
             )}
           </>
         }
       />
 
-      {/* ── Input bar ── */}
-      <View style={[s.inputBar, { backgroundColor: t.bgHeader, borderTopColor: t.border }]}>
+      {/* ── Composer area ── */}
+      <View style={[s.composerWrap, { backgroundColor: t.bgHeader, borderTopColor: t.border }]}>
+
+        {/* Quick actions — visible when expanded or always as a compact row */}
+        {inputExpanded && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.quickActions} contentContainerStyle={s.quickActionsContent}>
+            <ActionPill icon={planMode ? '⚡' : '📋'} label={planMode ? 'Exec' : 'Plan'} color={t.accent} bg={t.accent + '20'}
+              onPress={() => { onTogglePlan(); }} />
+            {isGenerating && (
+              <ActionPill icon="⏹" label="Stop" color={t.error} bg={t.error + '20'} onPress={handleStop} />
+            )}
+            <ActionPill icon="🗑" label="Clear" color={t.warning} bg={t.warning + '20'} onPress={handleClear} />
+            <ActionPill icon={THEMES[themeName].icon} label="Theme" color={t.accent2} bg={t.accent2 + '20'}
+              onPress={() => setShowThemes(true)} />
+            {inputExpanded && (
+              <ActionPill icon="▾" label="Close" color={t.muted} bg={t.muted + '20'} onPress={collapseInput} />
+            )}
+          </ScrollView>
+        )}
+
+        {/* Plan mode indicator */}
         {planMode && (
-          <View style={[s.planTag, { backgroundColor: t.planLabelBg }]}>
-            <Text style={{ color: t.planLabel, fontSize: 9, fontWeight: '700' }}>PLAN</Text>
+          <View style={[s.planBanner, { backgroundColor: t.planLabelBg + '30' }]}>
+            <Text style={{ color: t.planLabelBg, fontSize: 11, fontWeight: '600' }}>📋 Plan mode — agent will research and plan, not execute</Text>
           </View>
         )}
-        <TextInput
-          style={[s.textInput, { backgroundColor: t.bgInput, color: t.fg, borderColor: t.border }]}
-          placeholder={planMode ? 'Ask to plan...' : 'Message...'}
-          placeholderTextColor={t.muted}
-          value={input}
-          onChangeText={setInput}
-          onSubmitEditing={() => sendMessage()}
-          returnKeyType="send"
-          multiline
-          maxLength={10000}
-        />
-        <TouchableOpacity
-          style={[s.sendBtn, { backgroundColor: t.accent }, !input.trim() && { opacity: 0.3 }]}
-          onPress={() => sendMessage()}
-          disabled={!input.trim()}
-        >
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>↑</Text>
-        </TouchableOpacity>
+
+        {/* Input row */}
+        <View style={s.inputRow}>
+          <TextInput
+            ref={inputRef}
+            style={[
+              s.textInput,
+              { backgroundColor: t.bgInput, color: t.fg, borderColor: inputExpanded ? t.accent : t.border },
+              inputExpanded && { maxHeight: 160, minHeight: 80 },
+            ]}
+            placeholder={planMode ? 'Ask to plan...' : 'Message...'}
+            placeholderTextColor={t.muted}
+            value={input}
+            onChangeText={setInput}
+            onFocus={expandInput}
+            onSubmitEditing={() => sendMessage()}
+            returnKeyType="send"
+            blurOnSubmit={false}
+            multiline
+            maxLength={10000}
+          />
+          <TouchableOpacity
+            style={[s.sendBtn, { backgroundColor: t.accent }, !input.trim() && { opacity: 0.3 }]}
+            onPress={() => sendMessage()}
+            disabled={!input.trim()}
+          >
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>↑</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* ── Question sheet ── */}
+      {/* ── Modals ── */}
       {questions && (
         <QuestionSheet questions={questions} onSubmit={handleQuestionSubmit} onCancel={() => setQuestions(null)} />
       )}
-
-      {/* ── Plan approval sheet ── */}
       {planApprovalText && (
-        <PlanApprovalSheet
-          planText={planApprovalText}
-          onExecute={handlePlanExecute}
-          onRevise={handlePlanRevise}
-          onCancel={() => setPlanApprovalText(null)}
-        />
+        <PlanApprovalSheet planText={planApprovalText} onExecute={handlePlanExecute} onRevise={handlePlanRevise} onCancel={() => setPlanApprovalText(null)} />
       )}
-
-      {/* ── More menu ── */}
-      {showMenu && (
-        <Modal transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
-          <TouchableOpacity style={s.menuOverlay} activeOpacity={1} onPress={() => setShowMenu(false)}>
-            <View style={[s.menuSheet, { backgroundColor: t.bgPanel, borderColor: t.border }]}>
-              <MenuItem icon="🔄" label="Clear session" color={t.fg} onPress={() => { setShowMenu(false); handleClear(); }} />
-              <MenuItem icon={planMode ? '⚡' : '📋'} label={planMode ? 'Switch to Execute' : 'Switch to Plan'}
-                color={t.fg} onPress={() => { setShowMenu(false); onTogglePlan(); }} />
-              <MenuItem icon={THEMES[themeName].icon} label="Change theme" color={t.fg}
-                onPress={() => { setShowMenu(false); setShowThemes(true); }} />
-              <View style={[s.menuDivider, { backgroundColor: t.border }]} />
-              <MenuItem icon="ℹ️" label={`${credentials.username} · ${connState}`} color={t.muted} onPress={() => setShowMenu(false)} />
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
-
-      {/* ── Theme picker ── */}
       {showThemes && (
         <Modal transparent animationType="slide" onRequestClose={() => setShowThemes(false)}>
           <View style={s.themeOverlay}>
@@ -347,8 +355,7 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
                   const active = name === themeName;
                   return (
                     <TouchableOpacity key={name}
-                      style={[s.themeRow, { borderColor: active ? th.accent : t.border, backgroundColor: th.bg },
-                        active && { borderWidth: 2 }]}
+                      style={[s.themeRow, { borderColor: active ? th.accent : t.border, backgroundColor: th.bg }, active && { borderWidth: 2 }]}
                       onPress={() => { setThemeName(name); setShowThemes(false); }}>
                       <Text style={{ fontSize: 20, marginRight: 12 }}>{th.icon}</Text>
                       <Text style={{ color: th.fg, fontSize: 15, fontWeight: active ? '700' : '400', flex: 1 }}>{name}</Text>
@@ -369,11 +376,11 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
   );
 }
 
-function MenuItem({ icon, label, color, onPress }: { icon: string; label: string; color: string; onPress: () => void }) {
+function ActionPill({ icon, label, color, bg, onPress }: { icon: string; label: string; color: string; bg: string; onPress: () => void }) {
   return (
-    <TouchableOpacity style={s.menuItem} onPress={onPress}>
-      <Text style={{ fontSize: 18, marginRight: 12 }}>{icon}</Text>
-      <Text style={{ color, fontSize: 15 }}>{label}</Text>
+    <TouchableOpacity style={[s.pill, { backgroundColor: bg }]} onPress={onPress}>
+      <Text style={{ fontSize: 14 }}>{icon}</Text>
+      <Text style={{ color, fontSize: 12, fontWeight: '600', marginLeft: 4 }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -384,8 +391,7 @@ const s = StyleSheet.create({
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingTop: 54, paddingHorizontal: 14, paddingBottom: 10,
-    borderBottomWidth: 1,
+    paddingTop: 54, paddingHorizontal: 14, paddingBottom: 10, borderBottomWidth: 1,
   },
   headerCenter: { flex: 1 },
   headerMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 1 },
@@ -397,7 +403,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 14, paddingVertical: 5, borderBottomWidth: 1,
   },
-  stopChip: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
+  stopChip: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, marginLeft: 8 },
 
   // Messages
   messageList: { padding: 10, paddingBottom: 4 },
@@ -408,26 +414,21 @@ const s = StyleSheet.create({
   msgText: { fontSize: 14, lineHeight: 20 },
   usageText: { fontSize: 10, textAlign: 'center', marginTop: 2, marginBottom: 6 },
 
-  // Input
-  inputBar: {
-    flexDirection: 'row', alignItems: 'flex-end',
-    padding: 8, paddingBottom: Platform.OS === 'ios' ? 28 : 8, borderTopWidth: 1,
-  },
-  planTag: { position: 'absolute', top: -10, left: 16, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, zIndex: 1 },
+  // Composer
+  composerWrap: { borderTopWidth: 1, paddingBottom: Platform.OS === 'ios' ? 24 : 6 },
+  quickActions: { maxHeight: 44 },
+  quickActionsContent: { flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 6, gap: 6 },
+  pill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16 },
+  planBanner: { paddingHorizontal: 14, paddingVertical: 4 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 8, paddingTop: 4, paddingBottom: 4 },
   textInput: {
     flex: 1, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10,
-    fontSize: 15, maxHeight: 100, borderWidth: 1,
+    fontSize: 15, maxHeight: 44, borderWidth: 1,
   },
   sendBtn: {
     width: 38, height: 38, borderRadius: 19,
     justifyContent: 'center', alignItems: 'center', marginLeft: 8,
   },
-
-  // Menu
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 95, paddingRight: 14 },
-  menuSheet: { borderRadius: 14, padding: 6, minWidth: 220, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 12 },
-  menuDivider: { height: 1, marginHorizontal: 12 },
 
   // Themes
   themeOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
