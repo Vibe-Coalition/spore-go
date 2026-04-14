@@ -183,7 +183,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
         <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 12, flex: 1, marginLeft: 10 }} numberOfLines={1}>
           {state.credentials?.username}@{session.project}
         </Text>
-        <Text style={{ color: connColor, fontFamily: MONO, fontSize: 12 }}>{connIcon}</Text>
+        <Text style={{ color: connColor, fontFamily: MONO, fontSize: 10 }}>{connIcon} {connState}</Text>
         <TouchableOpacity style={[st.modeBadge, { backgroundColor: planMode ? t.planLabelBg : t.execLabelBg }]}
           onPress={() => handleTogglePlan()}>
           <Text style={{ color: planMode ? t.planLabel : t.execLabel, fontFamily: MONO, fontSize: 10, fontWeight: '700' }}>

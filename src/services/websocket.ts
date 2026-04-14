@@ -15,6 +15,7 @@ export class AcornWebSocket {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private outbox: string[] = [];
   private closed = false;
+  private lastPong: number = Date.now();
   private pingTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -51,15 +52,25 @@ export class AcornWebSocket {
         try { ws.send(msg); } catch {}
       }
       this.outbox = [];
-      // Start ping
+      // Start ping + dead connection detection
+      this.lastPong = Date.now();
       this.pingTimer = setInterval(() => {
         try { ws.send(JSON.stringify({ type: 'ping' })); } catch {}
+        // If no pong in 35s, connection is dead — force close to trigger reconnect
+        if (Date.now() - this.lastPong > 35000) {
+          console.warn('[AcornWS] no pong in 35s, forcing reconnect');
+          try { ws.close(); } catch {}
+        }
       }, 25000);
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data as string) as WsEvent;
+        if (data.type === 'pong') {
+          this.lastPong = Date.now();
+          return; // don't forward pong to app
+        }
         this.onEvent(data);
       } catch {}
     };
