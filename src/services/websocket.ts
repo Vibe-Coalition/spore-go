@@ -1,0 +1,124 @@
+import { WsEvent, ConnectionState } from '../types';
+
+type EventCallback = (event: WsEvent) => void;
+type StateCallback = (state: ConnectionState) => void;
+
+const BACKOFF = [1000, 2000, 4000, 8000, 15000, 30000];
+
+export class AcornWebSocket {
+  private ws: WebSocket | null = null;
+  private serverUrl: string;
+  private token: string;
+  private onEvent: EventCallback;
+  private onStateChange: StateCallback;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private outbox: string[] = [];
+  private closed = false;
+  private pingTimer: ReturnType<typeof setInterval> | null = null;
+
+  constructor(
+    serverUrl: string,
+    token: string,
+    onEvent: EventCallback,
+    onStateChange: StateCallback,
+  ) {
+    this.serverUrl = serverUrl;
+    this.token = token;
+    this.onEvent = onEvent;
+    this.onStateChange = onStateChange;
+  }
+
+  connect() {
+    this.closed = false;
+    this._connect();
+  }
+
+  private _connect() {
+    if (this.closed) return;
+    this.onStateChange('connecting');
+
+    const wsUrl = this.serverUrl.replace(/^http/, 'ws') + `/ws?token=${this.token}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      this.ws = ws;
+      this.reconnectAttempt = 0;
+      this.onStateChange('connected');
+      // Flush outbox
+      for (const msg of this.outbox) {
+        try { ws.send(msg); } catch {}
+      }
+      this.outbox = [];
+      // Start ping
+      this.pingTimer = setInterval(() => {
+        try { ws.send(JSON.stringify({ type: 'ping' })); } catch {}
+      }, 25000);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data as string) as WsEvent;
+        this.onEvent(data);
+      } catch {}
+    };
+
+    ws.onclose = () => {
+      this.ws = null;
+      if (this.pingTimer) { clearInterval(this.pingTimer); this.pingTimer = null; }
+      this.onStateChange('disconnected');
+      if (!this.closed) this._scheduleReconnect();
+    };
+
+    ws.onerror = () => {
+      // onclose will fire after this
+    };
+  }
+
+  private _scheduleReconnect() {
+    const delay = BACKOFF[Math.min(this.reconnectAttempt, BACKOFF.length - 1)];
+    this.reconnectAttempt++;
+    this.reconnectTimer = setTimeout(() => this._connect(), delay);
+  }
+
+  send(msg: object) {
+    const data = JSON.stringify(msg);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(data);
+    } else {
+      this.outbox.push(data);
+    }
+  }
+
+  observe(sessionId: string) {
+    this.send({ type: 'session:observe', sessionId });
+  }
+
+  unobserve(sessionId: string) {
+    this.send({ type: 'session:unobserve', sessionId });
+  }
+
+  sendMessage(content: string, sessionId: string, userName: string) {
+    this.send({ type: 'chat', content, sessionId, userName });
+  }
+
+  requestHistory(sessionId: string) {
+    this.send({ type: 'chat:history-request', sessionId });
+  }
+
+  stop(sessionId?: string) {
+    this.send({ type: 'chat:stop', sessionId });
+  }
+
+  updateToken(token: string) {
+    this.token = token;
+  }
+
+  disconnect() {
+    this.closed = true;
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    if (this.pingTimer) { clearInterval(this.pingTimer); this.pingTimer = null; }
+    if (this.ws) { this.ws.close(); this.ws = null; }
+    this.onStateChange('disconnected');
+  }
+}
