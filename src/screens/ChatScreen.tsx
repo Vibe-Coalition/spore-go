@@ -88,11 +88,28 @@ export default function ChatScreen() {
       case 'tool': {
         const color = item.status === 'pending' ? t.warning : item.status === 'denied' ? t.error : t.success;
         const icon = item.status === 'pending' ? '⚙' : item.status === 'denied' ? '✗' : '✓';
+        const toolId = item.id.replace('tool-', '');
         return (
-          <Text style={[st.toolLine, { color, fontFamily: MONO }]}>
-            {'  '}{icon} {item.name}: {item.summary}
-            {item.status === 'pending' ? '  [waiting...]' : ''}
-          </Text>
+          <View style={{ paddingHorizontal: 6, paddingVertical: 3 }}>
+            <Text style={{ color, fontFamily: MONO, fontSize: 12 }}>
+              {icon} {item.name}: {item.summary}
+            </Text>
+            {item.status === 'pending' && (
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4, paddingLeft: 16 }}>
+                <TouchableOpacity onPress={() => {
+                  ws.current?.send({ type: 'tool:approve', id: toolId, allowed: true });
+                }}>
+                  <Text style={{ color: t.success, fontFamily: MONO, fontSize: 12 }}>[allow]</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                  ws.current?.send({ type: 'tool:approve', id: toolId, allowed: false });
+                }}>
+                  <Text style={{ color: t.error, fontFamily: MONO, fontSize: 12 }}>[deny]</Text>
+                </TouchableOpacity>
+                <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 10, alignSelf: 'center' }}>waiting for CLI...</Text>
+              </View>
+            )}
+          </View>
         );
       }
       case 'status':
@@ -202,7 +219,11 @@ export default function ChatScreen() {
               {(['ask', 'auto', 'yolo'] as const).map(mode => (
                 <CmdRow key={mode} label={mode} icon={mode === 'ask' ? '🔒' : mode === 'auto' ? '🔓' : '☠️'}
                   desc={permMode === mode ? '(active)' : ''} color={permMode === mode ? t.accent : t.muted}
-                  onPress={() => { dispatch({ type: 'SET_PERM_MODE', mode }); setShowActions(false); }} />
+                  onPress={() => {
+                    dispatch({ type: 'SET_PERM_MODE', mode });
+                    ws.current?.send({ type: 'perm:set-mode', mode });
+                    setShowActions(false);
+                  }} />
               ))}
               <Text style={[st.sectionTitle, { color: t.fg, fontFamily: MONO }]}>└{'─'.repeat(34)}┘</Text>
             </Pressable>
