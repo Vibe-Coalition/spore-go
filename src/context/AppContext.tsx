@@ -250,7 +250,7 @@ function reducer(state: AppState, action: AppAction): AppState {
         ...state,
         messages: [...state.messages, {
           type: 'approval' as const,
-          id: `approval-${Date.now()}`,
+          id: nextId(),
           name: action.name,
           summary: action.summary,
           dangerous: action.dangerous,
