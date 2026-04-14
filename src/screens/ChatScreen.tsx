@@ -72,6 +72,11 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
   };
 
   const handleStop = () => ws.current?.stop(session.key);
+  const handleTogglePlan = () => {
+    const newMode = !planMode;
+    dispatch({ type: 'SET_PLAN_MODE', on: newMode });
+    ws.current?.send({ type: 'plan:set-mode', enabled: newMode });
+  };
   const handleClear = () => Alert.alert('Clear', 'Clear all messages?', [
     { text: 'No', style: 'cancel' },
     { text: 'Yes', style: 'destructive', onPress: () => { ws.current?.send({ type: 'chat:clear', sessionId: session.key }); dispatch({ type: 'CLEAR_MESSAGES' }); } },
@@ -173,7 +178,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
         </Text>
         <Text style={{ color: connColor, fontFamily: MONO, fontSize: 12 }}>{connIcon}</Text>
         <TouchableOpacity style={[st.modeBadge, { backgroundColor: planMode ? t.planLabelBg : t.execLabelBg }]}
-          onPress={() => dispatch({ type: 'TOGGLE_PLAN' })}>
+          onPress={() => handleTogglePlan()}>
           <Text style={{ color: planMode ? t.planLabel : t.execLabel, fontFamily: MONO, fontSize: 10, fontWeight: '700' }}>
             {planMode ? 'PLAN' : 'EXEC'}
           </Text>
@@ -244,7 +249,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
             <Pressable style={[st.actionsPanel, { backgroundColor: t.bgPanel, borderColor: t.border }]} onPress={e => e.stopPropagation()}>
               <Text style={[st.sectionTitle, { color: t.fg, fontFamily: MONO }]}>┌─ commands {'─'.repeat(20)}┐</Text>
               <CmdRow label="plan/exec" icon={planMode ? '⚡' : '📋'} desc={planMode ? 'switch to execute' : 'switch to plan'} color={t.accent}
-                onPress={() => { setShowActions(false); dispatch({ type: 'TOGGLE_PLAN' }); }} />
+                onPress={() => { setShowActions(false); handleTogglePlan(); }} />
               {isGenerating && <CmdRow label="stop" icon="⏹" desc="stop generation" color={t.error}
                 onPress={() => { setShowActions(false); handleStop(); }} />}
               <CmdRow label="clear" icon="🗑" desc="clear session" color={t.warning}
