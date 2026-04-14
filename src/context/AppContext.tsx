@@ -397,17 +397,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (wsRef.current) { wsRef.current.disconnect(); wsRef.current = null; }
       return;
     }
-    // If ws exists and token changed, update it
+    // Tear down old WS and create fresh one every time credentials change
     if (wsRef.current) {
-      wsRef.current.updateToken(creds.token);
-      return;
+      wsRef.current.disconnect();
+      wsRef.current = null;
     }
-    // Create new ws
     const ws = new AcornWebSocket(creds.serverUrl, creds.token, handleWsEvent, handleConnState);
     wsRef.current = ws;
     ws.connect();
     return () => { ws.disconnect(); wsRef.current = null; };
-  }, [state.credentials?.token, state.credentials?.serverUrl, handleWsEvent, handleConnState]);
+  // Only recreate when token or serverUrl actually changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.credentials?.token, state.credentials?.serverUrl]);
 
   if (!fontsLoaded) {
     return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}><ActivityIndicator color={theme.accent} /></View>;

@@ -45,6 +45,7 @@ export class AcornWebSocket {
       this.ws = ws;
       this.reconnectAttempt = 0;
       this.onStateChange('connected');
+      console.log('[AcornWS] connected to', wsUrl.replace(/token=.*/, 'token=***'));
       // Flush outbox
       for (const msg of this.outbox) {
         try { ws.send(msg); } catch {}
@@ -70,8 +71,8 @@ export class AcornWebSocket {
       if (!this.closed) this._scheduleReconnect();
     };
 
-    ws.onerror = () => {
-      // onclose will fire after this
+    ws.onerror = (e) => {
+      console.warn('[AcornWS] error:', (e as any)?.message || 'unknown');
     };
   }
 
