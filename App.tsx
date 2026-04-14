@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider } from './src/context/ThemeContext';
 import AuthScreen from './src/screens/AuthScreen';
 import SessionListScreen from './src/screens/SessionListScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import { Credentials, Session } from './src/types';
-import { clearCredentials } from './src/services/auth';
+import { clearCredentials, saveCredentials } from './src/services/auth';
 
 type Screen = 'auth' | 'sessions' | 'chat';
 
-export default function App() {
+function AppContent() {
   const [screen, setScreen] = useState<Screen>('auth');
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [planMode, setPlanMode] = useState(false);
 
   const handleAuth = (creds: Credentials) => {
     setCredentials(creds);
@@ -26,6 +28,7 @@ export default function App() {
 
   const handleSelectSession = (session: Session) => {
     setSelectedSession(session);
+    setPlanMode(false);
     setScreen('chat');
   };
 
@@ -45,15 +48,26 @@ export default function App() {
           credentials={credentials}
           onSelectSession={handleSelectSession}
           onLogout={handleLogout}
+          onTokenRefresh={(creds) => { setCredentials(creds); saveCredentials(creds); }}
         />
       )}
       {screen === 'chat' && credentials && selectedSession && (
         <ChatScreen
           credentials={credentials}
           session={selectedSession}
+          planMode={planMode}
+          onTogglePlan={() => setPlanMode(p => !p)}
           onBack={handleBackFromChat}
         />
       )}
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

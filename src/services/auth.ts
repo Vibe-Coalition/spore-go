@@ -35,13 +35,45 @@ export async function authenticate(serverUrl: string, username: string, key: str
   return data.token;
 }
 
-export async function fetchSessions(serverUrl: string, token: string): Promise<Session[]> {
-  const res = await fetch(`${serverUrl}/api/acorn/sessions`, {
-    headers: { Authorization: `Bearer ${token}` },
+/**
+ * Re-authenticate using stored credentials and save the new token.
+ * Returns updated credentials or null if re-auth fails.
+ */
+export async function refreshToken(creds: Credentials): Promise<Credentials | null> {
+  try {
+    const token = await authenticate(creds.serverUrl, creds.username, creds.key);
+    const updated = { ...creds, token };
+    await saveCredentials(updated);
+    return updated;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch sessions with automatic token refresh on 401.
+ * Returns { sessions, credentials } where credentials may have a new token.
+ */
+export async function fetchSessions(
+  creds: Credentials,
+): Promise<{ sessions: Session[]; credentials: Credentials }> {
+  let res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
+    headers: { Authorization: `Bearer ${creds.token}` },
   });
+
+  // Token expired (server restart clears in-memory tokens) — re-auth
+  if (res.status === 401) {
+    const refreshed = await refreshToken(creds);
+    if (!refreshed) throw new Error('Re-authentication failed');
+    creds = refreshed;
+    res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
+      headers: { Authorization: `Bearer ${creds.token}` },
+    });
+  }
+
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || 'Failed to fetch sessions');
   }
-  return data.sessions || [];
+  return { sessions: data.sessions || [], credentials: creds };
 }
