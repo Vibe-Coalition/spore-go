@@ -274,7 +274,6 @@ function reducer(state: AppState, action: AppAction): AppState {
 
     // Theme
     case 'SET_THEME':
-      AsyncStorage.setItem('acorn_theme', action.name).catch(() => {});
       return { ...state, themeName: action.name };
 
     // Connection
@@ -314,6 +313,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (saved) dispatch({ type: 'SET_THEME', name: saved });
     }).catch(() => {});
   }, []);
+
+  // Persist theme when it changes
+  useEffect(() => {
+    if (state.themeName !== DEFAULT_THEME || state.screen !== 'auth') {
+      AsyncStorage.setItem('acorn_theme', state.themeName).catch(() => {});
+    }
+  }, [state.themeName]);
 
   // Wire WebSocket events → dispatch
   const handleWsEvent = useCallback((event: WsEvent) => {
