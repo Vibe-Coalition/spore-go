@@ -29,13 +29,23 @@ export async function clearCredentials(): Promise<void> {
 
 export async function authenticate(serverUrl: string, username: string, key: string): Promise<string> {
   const url = `${serverUrl}/api/acorn/auth`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, key }),
-    signal: timeoutSignal(8000),
-  });
-  const data = await res.json();
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, key }),
+      signal: timeoutSignal(8000),
+    });
+  } catch (e: any) {
+    throw new Error(`Can't reach server: ${e.message || 'network error'}`);
+  }
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Server returned non-JSON (HTTP ${res.status})`);
+  }
   if (!res.ok || !data.token) {
     throw new Error(data.error || 'Authentication failed');
   }
