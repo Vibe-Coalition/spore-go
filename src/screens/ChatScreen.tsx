@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import Markdown from 'react-native-markdown-display';
 import { AcornWebSocket } from '../services/websocket';
 import { parseQuestions, Question, formatAnswers } from '../utils/questions';
 import { PLAN_PREFIX, PLAN_EXECUTE_MSG, hasPlanReady } from '../utils/plan';
@@ -190,23 +189,6 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
     wsRef.current?.sendMessage(msg, session.key, credentials.username);
   };
 
-  const mdStyles = {
-    body: { color: t.fg, fontSize: 14, lineHeight: 20 },
-    heading1: { color: t.fg, fontSize: 20, fontWeight: '700' as const, marginVertical: 8 },
-    heading2: { color: t.fg, fontSize: 17, fontWeight: '700' as const, marginVertical: 6 },
-    heading3: { color: t.fg, fontSize: 15, fontWeight: '600' as const, marginVertical: 4 },
-    code_inline: { backgroundColor: t.bg, color: t.accent, fontSize: 13, paddingHorizontal: 4, borderRadius: 3 },
-    code_block: { backgroundColor: t.bg, color: t.accent, fontSize: 12, padding: 10, borderRadius: 6 },
-    fence: { backgroundColor: t.bg, color: t.accent, fontSize: 12, padding: 10, borderRadius: 6 },
-    link: { color: t.accent },
-    blockquote: { borderLeftColor: t.accent, borderLeftWidth: 3, paddingLeft: 10, color: t.muted },
-    bullet_list_icon: { color: t.accent },
-    ordered_list_icon: { color: t.accent },
-    strong: { color: t.fg, fontWeight: '700' as const },
-    em: { color: t.fg, fontStyle: 'italic' as const },
-    hr: { backgroundColor: t.separator },
-  };
-
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     return (
@@ -218,11 +200,9 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
         <Text style={[styles.roleLabel, { color: isUser ? t.bg + 'cc' : t.muted }]}>
           {isUser ? credentials.username : 'acorn'}
         </Text>
-        {isUser ? (
-          <Text style={[styles.messageText, { color: '#fff' }]}>{item.text}</Text>
-        ) : (
-          <Markdown style={mdStyles}>{item.text}</Markdown>
-        )}
+        <Text style={[styles.messageText, { color: isUser ? '#fff' : t.fg }]} selectable>
+          {item.text}
+        </Text>
       </View>
     );
   };
@@ -286,8 +266,9 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
             {streamingText ? (
               <View style={[styles.bubble, styles.assistantBubble, { backgroundColor: t.bgPanel, borderColor: t.border }]}>
                 <Text style={[styles.roleLabel, { color: t.muted }]}>acorn</Text>
-                <Markdown style={mdStyles}>{streamingText}</Markdown>
-                <Text style={{ color: t.accent }}>▎</Text>
+                <Text style={[styles.messageText, { color: t.fg }]} selectable>
+                  {streamingText}<Text style={{ color: t.accent }}>▎</Text>
+                </Text>
               </View>
             ) : null}
             {lastUsage?.usage && (
