@@ -66,12 +66,19 @@ export default function SessionListScreen({ onShowTests }: { onShowTests?: () =>
 
   return (
     <View style={[st.container, { backgroundColor: t.bg }]}>
-      {/* Header */}
+      {/* Header with ASCII logo */}
       <View style={[st.header, { borderBottomColor: t.border }]}>
-        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14, fontWeight: '700' }}>
-          🌰 acorn sessions
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 8, lineHeight: 10 }}>
+{` ██████╗  ██████╗ ██████╗ ██████╗ ███╗   ██╗
+██╔══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║
+███████║██║     ██║   ██║██████╔╝██╔██╗ ██║
+██╔══██║██║     ██║   ██║██╔══██╗██║╚██╗██║
+██║  ██║╚██████╗╚██████╔╝██║  ██║██║ ╚████║
+╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝`}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           {onShowTests && (
             <TouchableOpacity onPress={onShowTests}>
               <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 12 }}>[test]</Text>
