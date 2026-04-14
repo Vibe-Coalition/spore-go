@@ -217,16 +217,30 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
       <FlatList ref={flatListRef} data={messages} keyExtractor={item => item.id} renderItem={renderItem}
         contentContainerStyle={st.messageList}
         keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled"
-        ListFooterComponent={streamBuffer ? (
-          <View style={[st.panel, { borderColor: t.border }]}>
-            <Text style={[st.panelTitle, { color: t.accent, fontFamily: MONO }]}>
-              ─ acorn {'─'.repeat(42)}
-            </Text>
-            <Text style={[st.panelText, { color: t.fg, fontFamily: MONO }]} selectable>
-              {streamBuffer}<Text style={{ color: t.accent }}>▌</Text>
-            </Text>
-          </View>
-        ) : null}
+        ListFooterComponent={<>
+          {streamBuffer ? (
+            <View style={[st.panel, { borderColor: t.border }]}>
+              <Text style={[st.panelTitle, { color: t.accent, fontFamily: MONO }]}>
+                ─ acorn {'─'.repeat(42)}
+              </Text>
+              <Text style={[st.panelText, { color: t.fg, fontFamily: MONO }]} selectable>
+                {streamBuffer}<Text style={{ color: t.accent }}>▌</Text>
+              </Text>
+            </View>
+          ) : null}
+          {isGenerating && !streamBuffer && (
+            <View style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+              <Spinner style={{ color: t.thinking, fontFamily: MONO, fontSize: 12 }}
+                text={toolStatus ? `${toolStatus.tool}${toolStatus.detail ? ' ' + toolStatus.detail : ''}` : 'thinking...'} />
+            </View>
+          )}
+          {isGenerating && streamBuffer ? (
+            <View style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Spinner style={{ color: t.thinking, fontFamily: MONO, fontSize: 11 }}
+                text={toolStatus ? `${toolStatus.tool}${toolStatus.detail ? ' ' + toolStatus.detail : ''}` : 'generating...'} />
+            </View>
+          ) : null}
+        </>}
       />
 
       {/* ── Input area ── */}
