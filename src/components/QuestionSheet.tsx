@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, ScrollView,
-  StyleSheet, Modal,
+  StyleSheet, Modal, Platform,
 } from 'react-native';
 import { Question, AnswersData, formatAnswers } from '../utils/questions';
-import { useApp } from '../context/AppContext';
+import { useApp, MONO_FONT as MONO } from '../context/AppContext';
 
 interface Props {
   questions: Question[];
@@ -17,8 +17,8 @@ export default function QuestionSheet({ questions, onSubmit, onCancel }: Props) 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
   const [textInput, setTextInput] = useState('');
-  const [selected, setSelected] = useState(0);         // single-select cursor
-  const [checked, setChecked] = useState<Set<number>>(new Set()); // multi-select
+  const [selected, setSelected] = useState(0);
+  const [checked, setChecked] = useState<Set<number>>(new Set());
 
   const q = questions[currentIdx];
   if (!q) return null;
@@ -27,7 +27,6 @@ export default function QuestionSheet({ questions, onSubmit, onCancel }: Props) 
 
   const submitCurrent = () => {
     const newAnswers = { ...answers };
-
     if (q.options && q.multi) {
       const sel = q.options.filter((_, i) => checked.has(i));
       newAnswers[currentIdx] = sel.length ? sel : ['(none)'];
@@ -36,12 +35,9 @@ export default function QuestionSheet({ questions, onSubmit, onCancel }: Props) 
     } else {
       newAnswers[currentIdx] = textInput || '(skipped)';
     }
-
     setAnswers(newAnswers);
-
     if (isLast) {
-      const data: AnswersData = { answers: newAnswers, notes: {} };
-      onSubmit(formatAnswers(questions, data));
+      onSubmit(formatAnswers(questions, { answers: newAnswers, notes: {} }));
     } else {
       setCurrentIdx(currentIdx + 1);
       setSelected(0);
@@ -63,41 +59,37 @@ export default function QuestionSheet({ questions, onSubmit, onCancel }: Props) 
   return (
     <Modal transparent animationType="slide">
       <View style={s.overlay}>
-        <View style={[s.sheet, { backgroundColor: t.bgPanel }]}>
-          <View style={s.headerRow}>
-            <Text style={[s.counter, { color: t.accent }]}>
-              Question {currentIdx + 1}/{questions.length}
+        <View style={[s.sheet, { backgroundColor: t.bgPanel, borderColor: t.border }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 12 }}>
+              question {currentIdx + 1}/{questions.length}
             </Text>
             <TouchableOpacity onPress={onCancel}>
-              <Text style={{ color: t.muted, fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12 }}>[cancel]</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={[s.questionText, { color: t.fg }]}>{q.text}</Text>
+          <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 14, marginBottom: 12, lineHeight: 20 }}>{q.text}</Text>
 
-          <ScrollView style={s.optionsWrap}>
+          <ScrollView style={{ maxHeight: 300, marginBottom: 12 }}>
             {q.options ? (
               q.options.map((opt, i) => {
                 const isSelected = q.multi ? checked.has(i) : selected === i;
                 return (
                   <TouchableOpacity key={i}
-                    style={[s.option, { borderColor: t.border }, isSelected && { borderColor: t.accent, backgroundColor: t.accent + '15' }]}
+                    style={[s.option, { borderColor: isSelected ? t.accent : t.border }]}
                     onPress={() => toggleOption(i)}>
-                    <View style={[
-                      q.multi ? s.checkbox : s.radio,
-                      { borderColor: isSelected ? t.accent : t.muted },
-                      isSelected && { backgroundColor: t.accent },
-                    ]}>
-                      {isSelected && <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>✓</Text>}
-                    </View>
-                    <Text style={[s.optionText, { color: t.fg }]}>{opt}</Text>
+                    <Text style={{ color: isSelected ? t.accent : t.muted, fontFamily: MONO, fontSize: 13, width: 20 }}>
+                      {q.multi ? (isSelected ? '[x]' : '[ ]') : (isSelected ? ' ▸' : '  ')}
+                    </Text>
+                    <Text style={{ color: isSelected ? t.accent : t.fg, fontFamily: MONO, fontSize: 13, flex: 1 }}>{opt}</Text>
                   </TouchableOpacity>
                 );
               })
             ) : (
               <TextInput
-                style={[s.textInput, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput }]}
-                placeholder="Type your answer..."
+                style={{ color: t.fg, fontFamily: MONO, fontSize: 13, borderWidth: 1, borderColor: t.border, backgroundColor: t.bgInput, padding: 10, minHeight: 60, textAlignVertical: 'top' }}
+                placeholder="type your answer..."
                 placeholderTextColor={t.muted}
                 value={textInput} onChangeText={setTextInput}
                 multiline autoFocus
@@ -105,8 +97,10 @@ export default function QuestionSheet({ questions, onSubmit, onCancel }: Props) 
             )}
           </ScrollView>
 
-          <TouchableOpacity style={[s.submitBtn, { backgroundColor: t.accent }]} onPress={submitCurrent}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{isLast ? 'Submit' : 'Next'}</Text>
+          <TouchableOpacity style={[s.submitBtn, { borderColor: t.accent }]} onPress={submitCurrent}>
+            <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14 }}>
+              [{isLast ? 'submit' : 'next'}]
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -116,15 +110,7 @@ export default function QuestionSheet({ questions, onSubmit, onCancel }: Props) 
 
 const s = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36, maxHeight: '80%' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  counter: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  questionText: { fontSize: 17, fontWeight: '600', marginBottom: 16, lineHeight: 24 },
-  optionsWrap: { marginBottom: 16, maxHeight: 300 },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, marginRight: 12, justifyContent: 'center', alignItems: 'center' },
-  checkbox: { width: 22, height: 22, borderRadius: 4, borderWidth: 2, marginRight: 12, justifyContent: 'center', alignItems: 'center' },
-  optionText: { fontSize: 15, flex: 1, lineHeight: 20 },
-  textInput: { borderWidth: 1, borderRadius: 10, padding: 14, fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
-  submitBtn: { borderRadius: 10, padding: 15, alignItems: 'center' },
+  sheet: { borderWidth: 1, borderTopLeftRadius: 4, borderTopRightRadius: 4, padding: 16, paddingBottom: Platform.OS === 'ios' ? 36 : 16, maxHeight: '80%' },
+  option: { flexDirection: 'row', alignItems: 'center', padding: 10, borderWidth: 1, marginBottom: 6 },
+  submitBtn: { borderWidth: 1, padding: 12, alignItems: 'center' },
 });
