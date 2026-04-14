@@ -20,7 +20,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-export default function SessionListScreen() {
+export default function SessionListScreen({ onShowTests }: { onShowTests?: () => void }) {
   const { state, dispatch, theme: t } = useApp();
   const { credentials, sessions } = state;
   const [loading, setLoading] = useState(sessions.length === 0);
@@ -72,6 +72,11 @@ export default function SessionListScreen() {
           🌰 acorn sessions
         </Text>
         <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+          {onShowTests && (
+            <TouchableOpacity onPress={onShowTests}>
+              <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 12 }}>[test]</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => setShowThemes(true)}>
             <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12 }}>[theme]</Text>
           </TouchableOpacity>

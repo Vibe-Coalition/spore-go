@@ -14,7 +14,7 @@ import { ChatItem } from '../types';
 
 const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
-export default function ChatScreen() {
+export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }) {
   const { state, dispatch, theme: t, ws } = useApp();
   const { currentSession: session, messages, streamBuffer, isGenerating, toolStatus, questions, planApproval, planMode, permMode, connState } = state;
   const [input, setInput] = useState('');
@@ -214,6 +214,10 @@ export default function ChatScreen() {
                 onPress={() => { setShowActions(false); handleClear(); }} />
               <CmdRow label="theme" icon={THEMES[state.themeName].icon} desc={state.themeName} color={t.accent2}
                 onPress={() => { setShowActions(false); setShowThemes(true); }} />
+              {onShowTests && (
+                <CmdRow label="test" icon="🧪" desc="run UI tests" color={t.accent}
+                  onPress={() => { setShowActions(false); onShowTests(); }} />
+              )}
 
               <Text style={[st.sectionTitle, { color: t.fg, fontFamily: MONO, marginTop: 12 }]}>├─ permissions {'─'.repeat(16)}┤</Text>
               {(['ask', 'auto', 'yolo'] as const).map(mode => (
