@@ -22,15 +22,26 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
   const [showThemes, setShowThemes] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  // Observe session — retry until connected
   useEffect(() => {
-    if (!session || !ws.current) return;
-    const check = setInterval(() => {
-      if (ws.current && ws.current['ws']?.readyState === WebSocket.OPEN) {
-        ws.current.observe(session.key); ws.current.requestHistory(session.key); clearInterval(check);
+    if (!session) return;
+    let observed = false;
+    const tryObserve = () => {
+      if (observed) return;
+      if (ws.current?.isConnected) {
+        ws.current.observe(session.key);
+        ws.current.requestHistory(session.key);
+        observed = true;
       }
-    }, 200);
-    return () => { clearInterval(check); ws.current?.unobserve(session?.key || ''); };
-  }, [session?.key]);
+    };
+    // Try immediately and then poll
+    tryObserve();
+    const check = setInterval(tryObserve, 300);
+    return () => {
+      clearInterval(check);
+      if (observed && ws.current) ws.current.unobserve(session.key);
+    };
+  }, [session?.key, connState]); // re-run when connection state changes
 
   useEffect(() => {
     const timer = setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);

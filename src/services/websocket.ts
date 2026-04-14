@@ -81,6 +81,10 @@ export class AcornWebSocket {
     this.reconnectTimer = setTimeout(() => this._connect(), delay);
   }
 
+  get isConnected(): boolean {
+    return !!this.ws && this.ws.readyState === WebSocket.OPEN;
+  }
+
   send(msg: object) {
     const data = JSON.stringify(msg);
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {

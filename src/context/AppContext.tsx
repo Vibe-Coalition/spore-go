@@ -70,19 +70,25 @@ function reducer(state: AppState, action: AppAction): AppState {
       return { ...state, credentials: action.credentials, screen: 'sessions' };
     case 'LOGOUT':
       return { ...initialState, themeName: state.themeName };
-    case 'SELECT_SESSION':
+    case 'SELECT_SESSION': {
+      // Only clear messages if switching to a different session
+      const sameSession = state.currentSession?.key === action.session.key;
       return {
         ...state, currentSession: action.session, screen: 'chat',
-        messages: [], streamBuffer: '', responseParts: [], isGenerating: false,
-        toolStatus: null, lastUsage: null, questions: null, planApproval: null,
-        planMode: false,
+        messages: sameSession ? state.messages : [],
+        streamBuffer: sameSession ? state.streamBuffer : '',
+        responseParts: sameSession ? state.responseParts : [],
+        isGenerating: sameSession ? state.isGenerating : false,
+        toolStatus: sameSession ? state.toolStatus : null,
+        lastUsage: sameSession ? state.lastUsage : null,
+        questions: sameSession ? state.questions : null,
+        planApproval: sameSession ? state.planApproval : null,
+        planMode: sameSession ? state.planMode : false,
       };
+    }
     case 'BACK_TO_SESSIONS':
-      return {
-        ...state, screen: 'sessions', currentSession: null,
-        messages: [], streamBuffer: '', responseParts: [], isGenerating: false,
-        toolStatus: null, questions: null, planApproval: null,
-      };
+      // Keep messages — they'll be restored if user returns to same session
+      return { ...state, screen: 'sessions' };
 
     // Sessions
     case 'SET_SESSIONS':
