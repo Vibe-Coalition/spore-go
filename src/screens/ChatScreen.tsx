@@ -150,7 +150,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
 
   return (
     <KeyboardAvoidingView style={[st.container, { backgroundColor: t.bg }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
       {/* ── Header bar (terminal style) ── */}
       <View style={[st.headerBar, { backgroundColor: t.bgHeader, borderBottomColor: t.border }]}>
