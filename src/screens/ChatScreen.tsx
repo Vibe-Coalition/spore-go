@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, KeyboardAvoidingView, Platform, Modal, ScrollView,
-  Alert, Pressable,
+  Alert, Pressable, BackHandler,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { PLAN_PREFIX, PLAN_EXECUTE_MSG } from '../utils/plan';
@@ -47,6 +47,17 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     const timer = setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(timer);
   }, [messages.length, streamBuffer]);
+
+  // Android hardware back button
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (showActions) { setShowActions(false); return true; }
+      if (showThemes) { setShowThemes(false); return true; }
+      dispatch({ type: 'BACK_TO_SESSIONS' });
+      return true;
+    });
+    return () => sub.remove();
+  }, [showActions, showThemes, dispatch]);
 
   if (!session) return null;
 
