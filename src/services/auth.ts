@@ -3,6 +3,12 @@ import { Credentials, Session } from '../types';
 
 const CREDS_KEY = 'acorn_credentials';
 
+function timeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 export async function saveCredentials(creds: Credentials): Promise<void> {
   await SecureStore.setItemAsync(CREDS_KEY, JSON.stringify(creds));
 }
@@ -27,7 +33,7 @@ export async function authenticate(serverUrl: string, username: string, key: str
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, key }),
-    signal: AbortSignal.timeout(8000),
+    signal: timeoutSignal(8000),
   });
   const data = await res.json();
   if (!res.ok || !data.token) {
@@ -60,7 +66,7 @@ export async function fetchSessions(
 ): Promise<{ sessions: Session[]; credentials: Credentials }> {
   let res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
     headers: { Authorization: `Bearer ${creds.token}` },
-    signal: AbortSignal.timeout(8000),
+    signal: timeoutSignal(8000),
   });
 
   // Token expired (server restart clears in-memory tokens) — re-auth
@@ -70,7 +76,7 @@ export async function fetchSessions(
     creds = refreshed;
     res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
       headers: { Authorization: `Bearer ${creds.token}` },
-      signal: AbortSignal.timeout(8000),
+      signal: timeoutSignal(8000),
     });
   }
 
