@@ -56,6 +56,7 @@ export type WsEvent =
   | { type: 'code:diff'; path: string }
   | { type: 'tool:pending'; id: string; name: string; summary: string }
   | { type: 'tool:resolved'; id: string; denied: boolean }
+  | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean }
   | { type: 'pong' };
 
@@ -91,6 +92,7 @@ export type AppAction =
   | { type: 'SET_HISTORY'; messages: Array<{ role: string; text: string; ts?: string }> }
   // User actions
   | { type: 'SEND_MESSAGE'; text: string }
+  | { type: 'REMOTE_USER_MESSAGE'; text: string; userName: string }
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'SET_QUESTIONS'; questions: any[] | null }
   | { type: 'SET_PLAN_APPROVAL'; text: string | null }

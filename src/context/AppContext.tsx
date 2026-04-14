@@ -250,6 +250,13 @@ function reducer(state: AppState, action: AppAction): AppState {
         messages: [...state.messages, { type: 'user', id: nextId(), text: action.text }],
       };
 
+    case 'REMOTE_USER_MESSAGE':
+      // Message from another client (CLI or another mobile) in the same session
+      return {
+        ...state,
+        messages: [...state.messages, { type: 'user', id: nextId(), text: `[${action.userName}] ${action.text}` }],
+      };
+
     case 'CLEAR_MESSAGES':
       return { ...state, messages: [], streamBuffer: '', responseParts: [] };
 
@@ -348,6 +355,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'tool:resolved':
         dispatch({ type: 'TOOL_RESOLVED', id: event.id, denied: event.denied });
+        break;
+      case 'chat:user-message':
+        dispatch({ type: 'REMOTE_USER_MESSAGE', text: event.text, userName: event.userName });
         break;
     }
   }, []);
