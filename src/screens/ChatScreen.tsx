@@ -9,6 +9,7 @@ import { PLAN_PREFIX, PLAN_EXECUTE_MSG } from '../utils/plan';
 import { formatAnswers } from '../utils/questions';
 import { listThemes, THEMES } from '../themes';
 import MarkdownText from '../components/MarkdownText';
+import Spinner from '../components/Spinner';
 import QuestionSheet from '../components/QuestionSheet';
 import PlanApprovalSheet from '../components/PlanApprovalSheet';
 import { ChatItem } from '../types';
@@ -197,11 +198,13 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
       {/* ── Activity line ── */}
       {(toolStatus || isGenerating) && (
         <View style={[st.activityLine, { borderBottomColor: t.border }]}>
-          <Text style={{ color: toolStatus ? t.toolIcon : t.thinking, fontFamily: MONO, fontSize: 11, flex: 1 }} numberOfLines={1}>
-            {toolStatus
-              ? `${toolStatus.status === 'running' ? '⚙' : '✓'} ${toolStatus.tool}${toolStatus.detail ? ' ' + toolStatus.detail : ''}${toolStatus.durationMs ? ' (' + toolStatus.durationMs + 'ms)' : ''}`
-              : '● thinking...'}
-          </Text>
+          {toolStatus ? (
+            <Text style={{ color: t.toolIcon, fontFamily: MONO, fontSize: 11, flex: 1 }} numberOfLines={1}>
+              {toolStatus.status === 'running' ? '⚙' : '✓'} {toolStatus.tool}{toolStatus.detail ? ' ' + toolStatus.detail : ''}{toolStatus.durationMs ? ' (' + toolStatus.durationMs + 'ms)' : ''}
+            </Text>
+          ) : (
+            <Spinner style={{ color: t.thinking, fontFamily: MONO, fontSize: 11, flex: 1 }} text="generating..." />
+          )}
           {isGenerating && (
             <TouchableOpacity onPress={handleStop}>
               <Text style={{ color: t.error, fontFamily: MONO, fontSize: 11 }}>[stop]</Text>
