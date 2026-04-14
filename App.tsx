@@ -23,7 +23,7 @@ function AppContent() {
     <>
       <StatusBar style="light" />
       {state.screen === 'auth' && <AuthScreen />}
-      {state.screen === 'sessions' && <SessionListScreen onShowTests={() => setShowTests(true)} />}
+      {state.screen === 'sessions' && <SessionListScreen />}
       {state.screen === 'chat' && <ChatScreen onShowTests={() => setShowTests(true)} />}
     </>
   );

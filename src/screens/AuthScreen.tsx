@@ -1,85 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, KeyboardAvoidingView, Platform, Dimensions,
+  ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
+import AsciiBackground from '../components/AsciiBackground';
 import { authenticate, saveCredentials, loadCredentials } from '../services/auth';
 import { useApp } from '../context/AppContext';
 import { Credentials } from '../types';
 import { MONO_FONT as MONO } from '../context/AppContext';
 import { ACORN_LOGO } from '../utils/logo';
-
-// ── ASCII rain background ──
-// Characters drift down the screen like the Matrix/MJ aesthetic
-
-const CHARS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン{}[]<>/\\|=+-_.:;!?#@$%&*~^░▒▓█▄▀';
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const COLS = Math.floor(SCREEN_W / 10);
-const ROWS = Math.floor(SCREEN_H / 14);
-
-function AsciiRain({ color, dimColor }: { color: string; dimColor: string }) {
-  const [grid, setGrid] = useState<string[][]>([]);
-  const drops = useRef<number[]>([]);
-  const speeds = useRef<number[]>([]);
-
-  useEffect(() => {
-    // Init drops at random positions
-    drops.current = Array.from({ length: COLS }, () => Math.floor(Math.random() * ROWS));
-    speeds.current = Array.from({ length: COLS }, () => 1 + Math.floor(Math.random() * 3));
-
-    // Init grid with random chars
-    const initial: string[][] = [];
-    for (let r = 0; r < ROWS; r++) {
-      const row: string[] = [];
-      for (let c = 0; c < COLS; c++) {
-        row.push(Math.random() > 0.7 ? CHARS[Math.floor(Math.random() * CHARS.length)] : ' ');
-      }
-      initial.push(row);
-    }
-    setGrid(initial);
-
-    const timer = setInterval(() => {
-      setGrid(prev => {
-        const next = prev.map(row => [...row]);
-        for (let c = 0; c < COLS; c++) {
-          drops.current[c] += speeds.current[c];
-          if (drops.current[c] >= ROWS) {
-            drops.current[c] = 0;
-            speeds.current[c] = 1 + Math.floor(Math.random() * 3);
-          }
-          const r = drops.current[c] % ROWS;
-          next[r][c] = CHARS[Math.floor(Math.random() * CHARS.length)];
-          // Fade trail
-          const trailR = (r - 3 + ROWS) % ROWS;
-          if (Math.random() > 0.6) next[trailR][c] = ' ';
-        }
-        return next;
-      });
-    }, 120);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {grid.map((row, r) => (
-        <Text key={r} style={{ fontFamily: MONO, fontSize: 9, lineHeight: 13, letterSpacing: 1 }} allowFontScaling={false}>
-          {row.map((ch, c) => {
-            const drop = drops.current[c] % ROWS;
-            const dist = (r - drop + ROWS) % ROWS;
-            const isHead = dist === 0;
-            const isTail = dist < 4;
-            return (
-              <Text key={c} style={{ color: isHead ? color : isTail ? dimColor : dimColor + '20' }}>
-                {ch}
-              </Text>
-            );
-          })}
-        </Text>
-      ))}
-    </View>
-  );
-}
 
 export default function AuthScreen() {
   const { dispatch, theme: t } = useApp();
@@ -125,7 +54,7 @@ export default function AuthScreen() {
   if (checking) {
     return (
       <View style={[s.container, { backgroundColor: t.bg }]}>
-        <AsciiRain color={t.accent} dimColor={t.accent} />
+        <AsciiBackground color={t.fg} />
         <ActivityIndicator color={t.accent} />
       </View>
     );
@@ -133,9 +62,9 @@ export default function AuthScreen() {
 
   return (
     <View style={[s.container, { backgroundColor: t.bg }]}>
-      <AsciiRain color={t.accent} dimColor={t.accent} />
-      <KeyboardAvoidingView style={s.formWrap} behavior={'padding'}>
-        <View style={[s.card, { borderColor: t.border, backgroundColor: t.bg + 'ee' }]}>
+      <AsciiBackground color={t.fg} />
+      <KeyboardAvoidingView style={s.formWrap} behavior="padding">
+        <View style={[s.card, { borderColor: t.border, backgroundColor: t.bg + 'f0' }]}>
           <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{ACORN_LOGO}</Text>
           <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginBottom: 16 }}>companion</Text>
           <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>connect to anima server</Text>

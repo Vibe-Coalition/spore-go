@@ -10,6 +10,7 @@ import { Session } from '../types';
 
 import { MONO_FONT as MONO } from '../context/AppContext';
 import { ACORN_LOGO } from '../utils/logo';
+import AsciiBackground from '../components/AsciiBackground';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + (dateStr.includes('Z') ? '' : 'Z')).getTime();
@@ -21,7 +22,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-export default function SessionListScreen({ onShowTests }: { onShowTests?: () => void }) {
+export default function SessionListScreen() {
   const { state, dispatch, theme: t } = useApp();
   const { credentials, sessions } = state;
   const [loading, setLoading] = useState(sessions.length === 0);
@@ -63,21 +64,22 @@ export default function SessionListScreen({ onShowTests }: { onShowTests?: () =>
     </TouchableOpacity>
   );
 
-  if (loading) return <View style={[st.center, { backgroundColor: t.bg }]}><ActivityIndicator color={t.accent} /></View>;
+  if (loading) return (
+    <View style={[st.center, { backgroundColor: t.bg }]}>
+      <AsciiBackground color={t.fg} />
+      <ActivityIndicator color={t.accent} />
+    </View>
+  );
 
   return (
     <View style={[st.container, { backgroundColor: t.bg }]}>
+      <AsciiBackground color={t.fg} />
       {/* Header */}
-      <View style={[st.header, { borderBottomColor: t.border }]}>
+      <View style={[st.header, { borderBottomColor: t.border, backgroundColor: t.bg + 'dd' }]}>
         <View style={{ flex: 1 }}>
           <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5 }} allowFontScaling={false}>{ACORN_LOGO}</Text>
         </View>
         <View style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-          {onShowTests && (
-            <TouchableOpacity onPress={onShowTests}>
-              <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 12 }}>[test]</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity onPress={() => setShowThemes(true)}>
             <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12 }}>[theme]</Text>
           </TouchableOpacity>
