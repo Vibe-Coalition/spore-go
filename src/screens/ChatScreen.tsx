@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { PLAN_PREFIX, PLAN_EXECUTE_MSG } from '../utils/plan';
 import { formatAnswers } from '../utils/questions';
 import { listThemes, THEMES } from '../themes';
+import MarkdownText from '../components/MarkdownText';
 import QuestionSheet from '../components/QuestionSheet';
 import PlanApprovalSheet from '../components/PlanApprovalSheet';
 import { ChatItem } from '../types';
@@ -115,7 +116,9 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
             <Text style={[st.panelTitle, { color: t.accent, fontFamily: MONO }]}>
               ─ acorn {'─'.repeat(42)}
             </Text>
-            <Text style={[st.panelText, { color: t.fg, fontFamily: MONO }]} selectable>{item.text}</Text>
+            <View style={{ paddingHorizontal: 6 }}>
+              <MarkdownText>{item.text}</MarkdownText>
+            </View>
           </View>
         );
       case 'tool': {
