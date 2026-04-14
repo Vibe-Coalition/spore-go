@@ -383,6 +383,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         else if (event.status === 'thinking_done') dispatch({ type: 'THINKING_DONE' });
         else if (event.status === 'tool_exec_start') dispatch({ type: 'TOOL_EXEC_START', tool: event.tool || '', detail: event.detail });
         else if (event.status === 'tool_exec_done') dispatch({ type: 'TOOL_EXEC_DONE', durationMs: event.durationMs, resultChars: event.resultChars });
+        else if (event.status === 'interjected' || event.status === 'interjection') {
+          // Agent accepted interjection — keep generating state
+        } else if (event.status === 'waiting') {
+          // Session waiting for lock release
+        }
+        break;
+      case 'session:observe:ok':
+        // If session is actively generating when we join, set generating state
+        if (event.active) dispatch({ type: 'STREAM_START' });
         break;
       case 'code:view':
         dispatch({ type: 'CODE_VIEW', path: event.path, lines: (event.content || '').split('\n').length, isNew: !!event.isNew });
@@ -401,6 +410,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'tool:awaiting-approval':
         dispatch({ type: 'TOOL_AWAITING_APPROVAL', name: event.name, summary: event.summary, dangerous: event.dangerous });
+        break;
+      case 'perm:current-mode':
+        if (event.mode === 'ask' || event.mode === 'auto' || event.mode === 'yolo') {
+          dispatch({ type: 'SET_PERM_MODE', mode: event.mode });
+        }
         break;
     }
   }, []);

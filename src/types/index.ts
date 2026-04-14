@@ -58,6 +58,7 @@ export type WsEvent =
   | { type: 'tool:pending'; id: string; name: string; summary: string }
   | { type: 'tool:resolved'; id: string; denied: boolean }
   | { type: 'tool:awaiting-approval'; name: string; summary: string; dangerous: boolean }
+  | { type: 'perm:current-mode'; mode: string }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean }
   | { type: 'pong' };

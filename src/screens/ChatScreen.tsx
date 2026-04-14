@@ -54,7 +54,9 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     const msg = (text || input).trim();
     if (!msg || !ws.current) return;
     if (!text) setInput('');
-    dispatch({ type: 'SEND_MESSAGE', text: msg });
+    // Show as interjection if agent is currently generating
+    const label = isGenerating ? `[interjecting] ${msg}` : msg;
+    dispatch({ type: 'SEND_MESSAGE', text: label });
     ws.current.sendMessage(planMode ? PLAN_PREFIX + msg : msg, session.key, state.credentials!.username);
   };
 
