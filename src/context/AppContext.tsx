@@ -33,6 +33,7 @@ export interface AppState {
   permMode: PermMode;
   // Connection
   connState: ConnectionState;
+  cliConnected: boolean;
   // Theme
   themeName: string;
 }
@@ -56,6 +57,7 @@ const initialState: AppState = {
   planMode: false,
   permMode: 'auto',
   connState: 'disconnected',
+  cliConnected: false,
   themeName: DEFAULT_THEME,
 };
 
@@ -303,6 +305,8 @@ function reducer(state: AppState, action: AppAction): AppState {
     // Connection
     case 'SET_CONN_STATE':
       return { ...state, connState: action.state };
+    case 'SET_CLI_CONNECTED':
+      return { ...state, cliConnected: action.connected };
 
     default:
       return state;
@@ -395,8 +399,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         break;
       case 'session:observe:ok':
-        // If session is actively generating when we join, set generating state
         if (event.active) dispatch({ type: 'STREAM_START' });
+        dispatch({ type: 'SET_CLI_CONNECTED', connected: !!event.cliConnected });
         break;
       case 'code:view':
         dispatch({ type: 'CODE_VIEW', path: event.path, lines: (event.content || '').split('\n').length, isNew: !!event.isNew });

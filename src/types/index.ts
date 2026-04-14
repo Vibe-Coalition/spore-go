@@ -62,7 +62,7 @@ export type WsEvent =
   | { type: 'plan:decided'; action: string }
   | { type: 'plan:set-mode'; enabled: boolean }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
-  | { type: 'session:observe:ok'; sessionId: string; active: boolean }
+  | { type: 'session:observe:ok'; sessionId: string; active: boolean; cliConnected?: boolean }
   | { type: 'pong' };
 
 // ── Reducer actions ──
@@ -108,4 +108,5 @@ export type AppAction =
   // Theme
   | { type: 'SET_THEME'; name: string }
   // Connection
-  | { type: 'SET_CONN_STATE'; state: ConnectionState };
+  | { type: 'SET_CONN_STATE'; state: ConnectionState }
+  | { type: 'SET_CLI_CONNECTED'; connected: boolean };

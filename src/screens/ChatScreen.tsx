@@ -168,8 +168,10 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     }
   };
 
-  const connIcon = connState === 'connected' ? '●' : connState === 'connecting' ? '○' : '✗';
-  const connColor = connState === 'connected' ? t.success : connState === 'connecting' ? t.warning : t.error;
+  const { cliConnected } = state;
+  const connLabel = connState !== 'connected' ? connState : cliConnected ? 'cli online' : 'cli offline';
+  const connColor = connState !== 'connected' ? t.error : cliConnected ? t.success : t.warning;
+  const connIcon = connState !== 'connected' ? '✗' : cliConnected ? '●' : '○';
 
   return (
     <KeyboardAvoidingView style={[st.container, { backgroundColor: t.bg }]}
@@ -183,7 +185,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
         <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 12, flex: 1, marginLeft: 10 }} numberOfLines={1}>
           {state.credentials?.username}@{session.project}
         </Text>
-        <Text style={{ color: connColor, fontFamily: MONO, fontSize: 10 }}>{connIcon} {connState}</Text>
+        <Text style={{ color: connColor, fontFamily: MONO, fontSize: 10 }}>{connIcon} {connLabel}</Text>
         <TouchableOpacity style={[st.modeBadge, { backgroundColor: planMode ? t.planLabelBg : t.execLabelBg }]}
           onPress={() => handleTogglePlan()}>
           <Text style={{ color: planMode ? t.planLabel : t.execLabel, fontFamily: MONO, fontSize: 10, fontWeight: '700' }}>
