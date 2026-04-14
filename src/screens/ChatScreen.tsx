@@ -83,7 +83,9 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
   ]);
   const handleQuestionSubmit = (formatted: string) => { dispatch({ type: 'SET_QUESTIONS', questions: null }); sendMessage(formatted); };
   const handlePlanExecute = () => {
-    dispatch({ type: 'SET_PLAN_APPROVAL', text: null }); dispatch({ type: 'SET_PLAN_MODE', on: false });
+    dispatch({ type: 'SET_PLAN_APPROVAL', text: null });
+    dispatch({ type: 'SET_PLAN_MODE', on: false });
+    ws.current?.send({ type: 'plan:set-mode', enabled: false }); // sync CLI to exec mode
     dispatch({ type: 'SEND_MESSAGE', text: '▶ Execute plan' });
     ws.current?.sendMessage(PLAN_EXECUTE_MSG, session.key, state.credentials!.username);
   };
