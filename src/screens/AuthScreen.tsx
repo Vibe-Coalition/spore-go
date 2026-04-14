@@ -56,15 +56,15 @@ export default function AuthScreen() {
     <KeyboardAvoidingView style={[s.container, { backgroundColor: t.bg }]}
       behavior={'padding'}>
       <View style={[s.card, { borderColor: t.border }]}>
-        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14, textAlign: 'center', marginBottom: 4 }}>
-          ┌{'─'.repeat(28)}┐
-        </Text>
-        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14, textAlign: 'center' }}>
-          │   🌰 acorn companion   │
-        </Text>
-        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 14, textAlign: 'center', marginBottom: 16 }}>
-          └{'─'.repeat(28)}┘
-        </Text>
+        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{
+` ██████╗  ██████╗ ██████╗ ██████╗ ███╗   ██╗\n` +
+`██╔══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║\n` +
+`███████║██║     ██║   ██║██████╔╝██╔██╗ ██║\n` +
+`██╔══██║██║     ██║   ██║██╔══██╗██║╚██╗██║\n` +
+`██║  ██║╚██████╗╚██████╔╝██║  ██║██║ ╚████║\n` +
+`╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝`
+        }</Text>
+        <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginBottom: 16 }}>companion</Text>
         <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>connect to anima server</Text>
 
         <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>server:</Text>
