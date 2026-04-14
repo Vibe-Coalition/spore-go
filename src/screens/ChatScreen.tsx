@@ -88,6 +88,23 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
         else if (event.status === 'thinking_start') setToolStatus({ tool: 'thinking', status: 'running' });
         else if (event.status === 'thinking_done') setToolStatus(null);
         break;
+      case 'tool:pending':
+        // Tool awaiting CLI approval — show as system message
+        setMessages(prev => [...prev, {
+          id: `tool-${event.id}`,
+          role: 'assistant' as const,
+          text: `⚙ Requesting: ${event.name}\n${event.summary}`,
+          _toolPending: true,
+        } as any]);
+        break;
+      case 'tool:resolved':
+        // Update the pending tool message
+        setMessages(prev => prev.map(m =>
+          m.id === `tool-${event.id}`
+            ? { ...m, text: m.text.replace('⚙ Requesting:', event.denied ? '✗ Denied:' : '✓ Allowed:'), _toolPending: false } as any
+            : m
+        ));
+        break;
     }
   }, [planMode]);
 
@@ -142,6 +159,21 @@ export default function ChatScreen({ credentials, session, planMode, onTogglePla
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
+    const isTool = (item as any)._toolPending !== undefined;
+
+    if (isTool) {
+      const pending = (item as any)._toolPending;
+      const isDenied = item.text.startsWith('✗');
+      const isAllowed = item.text.startsWith('✓');
+      const borderColor = pending ? t.warning : isDenied ? t.error : t.success;
+      return (
+        <View style={[st.toolCard, { borderLeftColor: borderColor, backgroundColor: t.bgPanel }]}>
+          <Text style={[st.msgText, { color: t.fg, fontSize: 13 }]}>{item.text}</Text>
+          {pending && <Text style={{ color: t.warning, fontSize: 10, marginTop: 4 }}>Waiting for CLI approval...</Text>}
+        </View>
+      );
+    }
+
     return (
       <View style={[st.bubble, { backgroundColor: isUser ? t.accent : t.bgPanel, borderColor: isUser ? t.accent : t.border }, isUser ? st.userBubble : st.assistantBubble]}>
         <Text style={[st.roleLabel, { color: isUser ? t.bg + 'cc' : t.muted }]}>
@@ -344,6 +376,7 @@ const st = StyleSheet.create({
   bubble: { borderRadius: 14, padding: 12, marginBottom: 6, maxWidth: '88%', borderWidth: 1 },
   userBubble: { alignSelf: 'flex-end', borderBottomRightRadius: 4 },
   assistantBubble: { alignSelf: 'flex-start', borderBottomLeftRadius: 4 },
+  toolCard: { borderLeftWidth: 3, borderRadius: 8, padding: 10, marginBottom: 6, marginHorizontal: 4 },
   roleLabel: { fontSize: 9, fontWeight: '700', marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.5 },
   msgText: { fontSize: 14, lineHeight: 20 },
   usageText: { fontSize: 10, textAlign: 'center', marginTop: 2, marginBottom: 6 },

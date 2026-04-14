@@ -44,5 +44,7 @@ export type WsEvent =
   | { type: 'chat:history'; messages: Array<{ role: string; text: string; ts?: string }>; sessionId?: string }
   | { type: 'chat:status'; status: string; tool?: string; detail?: string; durationMs?: number; resultChars?: number }
   | { type: 'chat:tool'; tool: string }
+  | { type: 'tool:pending'; id: string; name: string; summary: string }
+  | { type: 'tool:resolved'; id: string; denied: boolean }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean }
   | { type: 'pong' };
