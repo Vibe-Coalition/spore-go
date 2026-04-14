@@ -99,27 +99,40 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
       case 'tool': {
         const color = item.status === 'pending' ? t.warning : item.status === 'denied' ? t.error : t.success;
         const icon = item.status === 'pending' ? '⚙' : item.status === 'denied' ? '✗' : '✓';
-        const toolId = item.id.replace('tool-', '');
         return (
-          <View style={{ paddingHorizontal: 6, paddingVertical: 3 }}>
-            <Text style={{ color, fontFamily: MONO, fontSize: 12 }}>
-              {icon} {item.name}: {item.summary}
+          <Text style={{ color, fontFamily: MONO, fontSize: 12, paddingHorizontal: 6, paddingVertical: 2 }}>
+            {'  '}{icon} {item.name}: {item.summary}
+          </Text>
+        );
+      }
+      case 'approval': {
+        if (item.resolved) {
+          return (
+            <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12, paddingHorizontal: 6, paddingVertical: 2 }}>
+              {'  '}✓ {item.name}: {item.summary} (resolved)
             </Text>
-            {item.status === 'pending' && (
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4, paddingLeft: 16 }}>
-                <TouchableOpacity onPress={() => {
-                  ws.current?.send({ type: 'tool:approve', id: toolId, allowed: true });
-                }}>
-                  <Text style={{ color: t.success, fontFamily: MONO, fontSize: 12 }}>[allow]</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  ws.current?.send({ type: 'tool:approve', id: toolId, allowed: false });
-                }}>
-                  <Text style={{ color: t.error, fontFamily: MONO, fontSize: 12 }}>[deny]</Text>
-                </TouchableOpacity>
-                <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 10, alignSelf: 'center' }}>waiting for CLI...</Text>
-              </View>
-            )}
+          );
+        }
+        return (
+          <View style={{ paddingHorizontal: 6, paddingVertical: 4, borderLeftWidth: 2, borderLeftColor: item.dangerous ? t.error : t.warning, marginVertical: 2, marginHorizontal: 4, paddingLeft: 10 }}>
+            <Text style={{ color: item.dangerous ? t.error : t.warning, fontFamily: MONO, fontSize: 12, fontWeight: '700' }}>
+              ⚙ {item.name}{item.dangerous ? ' ⚠ DANGEROUS' : ''}
+            </Text>
+            <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 11, marginTop: 2 }}>{item.summary}</Text>
+            <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
+              <TouchableOpacity onPress={() => {
+                ws.current?.send({ type: 'tool:approve', id: 'current', allowed: true });
+                dispatch({ type: 'TOOL_RESOLVED', id: '', denied: false });
+              }} style={{ borderWidth: 1, borderColor: t.success, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ color: t.success, fontFamily: MONO, fontSize: 12 }}>[allow]</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                ws.current?.send({ type: 'tool:approve', id: 'current', allowed: false });
+                dispatch({ type: 'TOOL_RESOLVED', id: '', denied: true });
+              }} style={{ borderWidth: 1, borderColor: t.error, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ color: t.error, fontFamily: MONO, fontSize: 12 }}>[deny]</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
       }

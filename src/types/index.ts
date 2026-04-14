@@ -22,6 +22,7 @@ export type ChatItem =
   | { type: 'user'; id: string; text: string }
   | { type: 'assistant'; id: string; text: string }
   | { type: 'tool'; id: string; name: string; summary: string; status: 'pending' | 'allowed' | 'denied' }
+  | { type: 'approval'; id: string; name: string; summary: string; dangerous: boolean; resolved: boolean }
   | { type: 'status'; id: string; text: string }
   | { type: 'error'; id: string; text: string };
 
@@ -56,6 +57,7 @@ export type WsEvent =
   | { type: 'code:diff'; path: string }
   | { type: 'tool:pending'; id: string; name: string; summary: string }
   | { type: 'tool:resolved'; id: string; denied: boolean }
+  | { type: 'tool:awaiting-approval'; name: string; summary: string; dangerous: boolean }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean }
   | { type: 'pong' };
@@ -88,6 +90,7 @@ export type AppAction =
   // Tool approval
   | { type: 'TOOL_PENDING'; id: string; name: string; summary: string }
   | { type: 'TOOL_RESOLVED'; id: string; denied: boolean }
+  | { type: 'TOOL_AWAITING_APPROVAL'; name: string; summary: string; dangerous: boolean }
   // History
   | { type: 'SET_HISTORY'; messages: Array<{ role: string; text: string; ts?: string }> }
   // User actions

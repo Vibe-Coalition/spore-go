@@ -233,11 +233,27 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'TOOL_RESOLVED':
       return {
         ...state,
-        messages: state.messages.map(m =>
-          m.id === `tool-${action.id}` && m.type === 'tool'
-            ? { ...m, status: action.denied ? 'denied' as const : 'allowed' as const }
-            : m
-        ),
+        messages: state.messages.map(m => {
+          if (m.id === `tool-${action.id}` && m.type === 'tool')
+            return { ...m, status: action.denied ? 'denied' as const : 'allowed' as const };
+          // Also mark any active approval card as resolved
+          if (m.type === 'approval' && !m.resolved)
+            return { ...m, resolved: true };
+          return m;
+        }),
+      };
+
+    case 'TOOL_AWAITING_APPROVAL':
+      return {
+        ...state,
+        messages: [...state.messages, {
+          type: 'approval' as const,
+          id: `approval-${Date.now()}`,
+          name: action.name,
+          summary: action.summary,
+          dangerous: action.dangerous,
+          resolved: false,
+        }],
       };
 
     // History
@@ -382,6 +398,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'chat:user-message':
         dispatch({ type: 'REMOTE_USER_MESSAGE', text: event.text, userName: event.userName });
+        break;
+      case 'tool:awaiting-approval':
+        dispatch({ type: 'TOOL_AWAITING_APPROVAL', name: event.name, summary: event.summary, dangerous: event.dangerous });
         break;
     }
   }, []);
