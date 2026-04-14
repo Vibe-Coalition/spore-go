@@ -158,10 +158,11 @@ export default function TestScreen({ onClose }: { onClose: () => void }) {
 
     // ── Reducer: tool pending/resolved ──
     try {
-      dispatch({ type: 'TOOL_PENDING', id: 'test-1', name: 'exec', summary: 'npm install' });
-      dispatch({ type: 'TOOL_RESOLVED', id: 'test-1', denied: false });
-      dispatch({ type: 'TOOL_PENDING', id: 'test-2', name: 'exec', summary: 'rm -rf /' });
-      dispatch({ type: 'TOOL_RESOLVED', id: 'test-2', denied: true });
+      const t1 = `test-${Date.now()}-1`, t2 = `test-${Date.now()}-2`;
+      dispatch({ type: 'TOOL_PENDING', id: t1, name: 'exec', summary: 'npm install' });
+      dispatch({ type: 'TOOL_RESOLVED', id: t1, denied: false });
+      dispatch({ type: 'TOOL_PENDING', id: t2, name: 'exec', summary: 'dangerous-command-test' });
+      dispatch({ type: 'TOOL_RESOLVED', id: t2, denied: true });
       log('reducer: tool approval', true, 'pending → allowed, pending → denied');
     } catch (e: any) {
       log('reducer: tool approval', false, e.message);
