@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { Credentials } from '../types';
 
 import { MONO_FONT as MONO } from '../context/AppContext';
+import { ACORN_LOGO } from '../utils/logo';
 
 export default function AuthScreen() {
   const { dispatch, theme: t } = useApp();
@@ -56,14 +57,7 @@ export default function AuthScreen() {
     <KeyboardAvoidingView style={[s.container, { backgroundColor: t.bg }]}
       behavior={'padding'}>
       <View style={[s.card, { borderColor: t.border }]}>
-        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{
-` ██████╗  ██████╗ ██████╗ ██████╗ ███╗   ██╗\n` +
-`██╔══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║\n` +
-`███████║██║     ██║   ██║██████╔╝██╔██╗ ██║\n` +
-`██╔══██║██║     ██║   ██║██╔══██╗██║╚██╗██║\n` +
-`██║  ██║╚██████╗╚██████╔╝██║  ██║██║ ╚████║\n` +
-`╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝`
-        }</Text>
+        <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{ACORN_LOGO}</Text>
         <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginBottom: 16 }}>companion</Text>
         <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>connect to anima server</Text>
 

@@ -9,6 +9,7 @@ import { listThemes, THEMES } from '../themes';
 import { Session } from '../types';
 
 import { MONO_FONT as MONO } from '../context/AppContext';
+import { ACORN_LOGO } from '../utils/logo';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr + (dateStr.includes('Z') ? '' : 'Z')).getTime();
@@ -69,14 +70,7 @@ export default function SessionListScreen({ onShowTests }: { onShowTests?: () =>
       {/* Header */}
       <View style={[st.header, { borderBottomColor: t.border }]}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5 }} allowFontScaling={false}>{
-` ██████╗  ██████╗ ██████╗ ██████╗ ███╗   ██╗\n` +
-`██╔══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║\n` +
-`███████║██║     ██║   ██║██████╔╝██╔██╗ ██║\n` +
-`██╔══██║██║     ██║   ██║██╔══██╗██║╚██╗██║\n` +
-`██║  ██║╚██████╗╚██████╔╝██║  ██║██║ ╚████║\n` +
-`╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝`
-          }</Text>
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5 }} allowFontScaling={false}>{ACORN_LOGO}</Text>
         </View>
         <View style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           {onShowTests && (
