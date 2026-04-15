@@ -72,7 +72,9 @@ export class AcornWebSocket {
           return; // don't forward pong to app
         }
         this.onEvent(data);
-      } catch {}
+      } catch (e) {
+        console.warn('[AcornWS] onmessage error:', e);
+      }
     };
 
     ws.onclose = () => {

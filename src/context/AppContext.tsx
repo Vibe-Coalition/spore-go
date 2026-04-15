@@ -447,8 +447,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_PLAN_MODE', on: !!event.enabled });
         break;
       case 'interactive:resolved':
+        console.log('[APP] interactive:resolved received, kind:', (event as any).kind);
         // CLI resolved an interactive prompt — dismiss matching UI on mobile
-        if (event.kind === 'tool-approval') {
+        if ((event as any).kind === 'tool-approval') {
           // Resolve all pending approval cards
           dispatch({ type: 'CLEAR_APPROVALS' });
         } else if (event.kind === 'questions') {
