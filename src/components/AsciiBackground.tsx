@@ -1,59 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect, useRef, useMemo, useState, memo } from 'react';
+import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { MONO_FONT as MONO } from '../context/AppContext';
 
 const GLYPHS = '.:-=+*#%@$&?!;/\\|(){}[]<>~^_01';
 
-export default function AsciiBackground({ color }: { color: string }) {
-  const [cells, setCells] = useState<string>('');
-  const [dims, setDims] = useState(Dimensions.get('window'));
+function generateLayer(total: number): string {
+  const arr = new Array(total);
+  for (let i = 0; i < total; i++) {
+    arr[i] = Math.random() > 0.45 ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : ' ';
+  }
+  return arr.join('');
+}
+
+function AsciiBackground({ color }: { color: string }) {
+  const { width, height } = Dimensions.get('window');
+  const total = Math.ceil((width / 5.5) * (height / 10.5)) + 200;
+
+  // Generate multiple layers, cycle through them with crossfade
+  const layers = useMemo(() => [
+    generateLayer(total),
+    generateLayer(total),
+    generateLayer(total),
+  ], [total]);
+
+  const [current, setCurrent] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const sub = Dimensions.addEventListener('change', ({ window }) => setDims(window));
-    return () => sub.remove();
-  }, []);
-
-  const total = Math.ceil((dims.width / 5.5) * (dims.height / 10.5)) + 500;
-
-  useEffect(() => {
-    const make = () => {
-      let s = '';
-      for (let i = 0; i < total; i++) {
-        s += Math.random() > 0.4 ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : ' ';
-      }
-      return s;
-    };
-    setCells(make());
-
-    const timer = setInterval(() => {
-      setCells(prev => {
-        if (prev.length < total) {
-          let s = prev;
-          while (s.length < total) s += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-          return s;
-        }
-        const arr = prev.split('');
-        const mutations = 30 + Math.floor(Math.random() * 40);
-        for (let i = 0; i < mutations; i++) {
-          const idx = Math.floor(Math.random() * arr.length);
-          arr[idx] = Math.random() > 0.35 ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : ' ';
-        }
-        return arr.join('');
+    const cycle = () => {
+      // Fade out
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 2000,
+        useNativeDriver: true,
+      }).start(() => {
+        // Switch layer
+        setCurrent(c => (c + 1) % layers.length);
+        // Fade in
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }).start();
       });
-    }, 150);
+    };
 
+    const timer = setInterval(cycle, 6000);
     return () => clearInterval(timer);
-  }, [total]);
+  }, [fadeAnim, layers.length]);
 
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
-      <Text style={{
+      <Animated.Text style={{
         fontFamily: MONO, fontSize: 9, lineHeight: 10.5,
-        color, opacity: 0.08,
+        color,
+        opacity: fadeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.03, 0.08],
+        }),
         position: 'absolute', top: 0, left: 0, right: 0,
       }} allowFontScaling={false}>
-        {cells}
-      </Text>
+        {layers[current]}
+      </Animated.Text>
     </View>
   );
 }
+
+export default memo(AsciiBackground);
