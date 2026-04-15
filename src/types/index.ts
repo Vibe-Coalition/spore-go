@@ -62,6 +62,7 @@ export type WsEvent =
   | { type: 'plan:decided'; action: string }
   | { type: 'plan:set-mode'; enabled: boolean }
   | { type: 'interactive:resolved'; kind: string }
+  | { type: 'delegate:config'; mode: string; workers: number }
   | { type: 'plan:show-approval'; text: string }
   | { type: 'state:questions'; questions: Array<{ text: string; options: string[] | null; multi: boolean; index: number }> }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
@@ -112,6 +113,8 @@ export type AppAction =
   | { type: 'SET_PERM_MODE'; mode: PermMode }
   // Theme
   | { type: 'SET_THEME'; name: string }
+  // Delegation
+  | { type: 'SET_DELEGATE_CONFIG'; mode: string; workers: number }
   // Connection
   | { type: 'SET_CONN_STATE'; state: ConnectionState }
   | { type: 'SET_CLI_CONNECTED'; connected: boolean };

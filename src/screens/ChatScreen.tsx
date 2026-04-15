@@ -316,6 +316,23 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
                     setShowActions(false);
                   }} />
               ))}
+              <Text style={[st.sectionTitle, { color: t.fg, fontFamily: MONO, marginTop: 12 }]}>├─ delegation {'─'.repeat(17)}┤</Text>
+              {(['default', 'off', 'research', 'code', 'all'] as const).map(mode => (
+                <CmdRow key={mode} label={mode}
+                  icon={mode === 'off' ? '🚫' : mode === 'research' ? '🔍' : mode === 'code' ? '📝' : mode === 'all' ? '🔓' : '⚡'}
+                  desc={state.delegateMode === mode ? '(active)' : ''} color={state.delegateMode === mode ? t.accent : t.muted}
+                  onPress={() => {
+                    dispatch({ type: 'SET_DELEGATE_CONFIG', mode, workers: state.delegateWorkers });
+                    ws.current?.send({ type: 'delegate:config', mode, workers: state.delegateWorkers });
+                    setShowActions(false);
+                  }} />
+              ))}
+              <CmdRow label={`workers: ${state.delegateWorkers}`} icon="👥" desc="tap to cycle (0-5)" color={t.muted}
+                onPress={() => {
+                  const next = (state.delegateWorkers + 1) % 6;
+                  dispatch({ type: 'SET_DELEGATE_CONFIG', mode: state.delegateMode, workers: next });
+                  ws.current?.send({ type: 'delegate:config', mode: state.delegateMode, workers: next });
+                }} />
               <Text style={[st.sectionTitle, { color: t.fg, fontFamily: MONO }]}>└{'─'.repeat(34)}┘</Text>
             </Pressable>
           </Pressable>

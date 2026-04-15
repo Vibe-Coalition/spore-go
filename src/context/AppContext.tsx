@@ -33,6 +33,8 @@ export interface AppState {
   permMode: PermMode;
   // Connection
   connState: ConnectionState;
+  delegateMode: string;
+  delegateWorkers: number;
   cliConnected: boolean;
   // Theme
   themeName: string;
@@ -58,6 +60,8 @@ const initialState: AppState = {
   permMode: 'auto',
   connState: 'disconnected',
   cliConnected: false,
+  delegateMode: 'default',
+  delegateWorkers: 3,
   themeName: DEFAULT_THEME,
 };
 
@@ -308,6 +312,9 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'SET_PLAN_APPROVAL':
       return { ...state, planApproval: action.text };
 
+    case 'SET_DELEGATE_CONFIG':
+      return { ...state, delegateMode: action.mode, delegateWorkers: action.workers };
+
     case 'TOGGLE_PLAN':
       return { ...state, planMode: !state.planMode };
     case 'SET_PLAN_MODE':
@@ -453,6 +460,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'plan:show-approval':
         dispatch({ type: 'SET_PLAN_APPROVAL', text: event.text });
+        break;
+      case 'delegate:config':
+        dispatch({ type: 'SET_DELEGATE_CONFIG', mode: event.mode, workers: event.workers });
         break;
       case 'state:questions':
         if (event.questions?.length) {
