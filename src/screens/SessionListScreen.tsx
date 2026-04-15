@@ -50,19 +50,31 @@ export default function SessionListScreen() {
   const active = sessions.filter(s => s.active);
   const recent = sessions.filter(s => !s.active).slice(0, 20);
 
-  const renderItem = ({ item }: { item: Session }) => (
-    <TouchableOpacity style={st.row} onPress={() => dispatch({ type: 'SELECT_SESSION', session: item })}>
-      <Text style={{ color: item.active ? t.success : t.muted, fontFamily: MONO, fontSize: 12 }}>
-        {item.active ? '●' : '○'}
-      </Text>
-      <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 13, flex: 1, marginLeft: 8 }} numberOfLines={1}>
-        {item.project}
-      </Text>
-      <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11 }}>
-        {item.messageCount}msg {timeAgo(item.updated)}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }: { item: Session }) => {
+    const created = new Date(item.created + (item.created.includes('Z') ? '' : 'Z'));
+    const dateStr = created.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const timeStr = created.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return (
+      <TouchableOpacity style={st.row} onPress={() => dispatch({ type: 'SELECT_SESSION', session: item })}>
+        <View style={{ marginRight: 10 }}>
+          <Text style={{ color: item.active ? t.success : t.muted, fontFamily: MONO, fontSize: 14, textAlign: 'center' }}>
+            {item.active ? '●' : '○'}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>
+            {item.project}
+          </Text>
+          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 10, marginTop: 2 }}>
+            {dateStr} {timeStr}  ·  {item.messageCount} msgs  ·  {timeAgo(item.updated)}
+          </Text>
+        </View>
+        <Text style={{ color: item.active ? t.success : t.muted, fontFamily: MONO, fontSize: 10 }}>
+          {item.active ? 'live' : ''}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) return (
     <View style={[st.center, { backgroundColor: t.bg }]}>
