@@ -272,15 +272,19 @@ function reducer(state: AppState, action: AppAction): AppState {
       };
 
     // History
-    case 'SET_HISTORY':
+    case 'SET_HISTORY': {
+      // Keep any interactive items (approval cards, tool cards) that were added before history loaded
+      const interactiveItems = state.messages.filter(m => m.type === 'approval' || m.type === 'tool');
+      const historyItems = action.messages.map((m, i) => ({
+        type: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+        id: `hist-${i}`,
+        text: m.text,
+      }));
       return {
         ...state,
-        messages: action.messages.map((m, i) => ({
-          type: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
-          id: `hist-${i}`,
-          text: m.text,
-        })),
+        messages: [...historyItems, ...interactiveItems],
       };
+    }
 
     // User actions
     case 'SEND_MESSAGE':
