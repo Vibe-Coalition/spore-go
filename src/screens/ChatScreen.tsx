@@ -95,6 +95,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
   // Plan decisions — send control messages to CLI, let CLI handle the actual flow
   const handlePlanExecute = () => {
     dispatch({ type: 'SET_PLAN_APPROVAL', text: null });
+    dispatch({ type: 'SET_PLAN_MODE', on: false });
     ws.current?.send({ type: 'plan:decision', action: 'execute' });
   };
   const handlePlanRevise = (feedback: string) => {
