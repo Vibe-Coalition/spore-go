@@ -250,6 +250,14 @@ function reducer(state: AppState, action: AppAction): AppState {
         ),
       };
 
+    case 'CLEAR_APPROVALS':
+      return {
+        ...state,
+        messages: state.messages.map(m =>
+          m.type === 'approval' && !(m as any).resolved ? { ...m, resolved: true } : m
+        ),
+      };
+
     case 'TOOL_AWAITING_APPROVAL':
       return {
         ...state,
@@ -437,6 +445,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'plan:set-mode':
         dispatch({ type: 'SET_PLAN_MODE', on: !!event.enabled });
+        break;
+      case 'interactive:resolved':
+        // CLI resolved an interactive prompt — dismiss matching UI on mobile
+        if (event.kind === 'tool-approval') {
+          // Resolve all pending approval cards
+          dispatch({ type: 'CLEAR_APPROVALS' });
+        } else if (event.kind === 'questions') {
+          dispatch({ type: 'SET_QUESTIONS', questions: null });
+        }
         break;
     }
   }, []);

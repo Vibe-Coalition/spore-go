@@ -83,7 +83,12 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     { text: 'No', style: 'cancel' },
     { text: 'Yes', style: 'destructive', onPress: () => { ws.current?.send({ type: 'chat:clear', sessionId: session.key }); dispatch({ type: 'CLEAR_MESSAGES' }); } },
   ]);
-  const handleQuestionSubmit = (formatted: string) => { dispatch({ type: 'SET_QUESTIONS', questions: null }); sendMessage(formatted); };
+  const handleQuestionSubmit = (formatted: string) => {
+    dispatch({ type: 'SET_QUESTIONS', questions: null });
+    sendMessage(formatted);
+    // Tell CLI to dismiss its question selector
+    ws.current?.send({ type: 'interactive:resolved', kind: 'questions' });
+  };
   // Plan decisions — send control messages to CLI, let CLI handle the actual flow
   const handlePlanExecute = () => {
     dispatch({ type: 'SET_PLAN_APPROVAL', text: null });

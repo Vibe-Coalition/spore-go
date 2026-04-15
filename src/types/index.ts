@@ -61,6 +61,7 @@ export type WsEvent =
   | { type: 'perm:current-mode'; mode: string }
   | { type: 'plan:decided'; action: string }
   | { type: 'plan:set-mode'; enabled: boolean }
+  | { type: 'interactive:resolved'; kind: string }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean; cliConnected?: boolean }
   | { type: 'pong' };
@@ -95,6 +96,7 @@ export type AppAction =
   | { type: 'TOOL_RESOLVED'; id: string; denied: boolean }
   | { type: 'TOOL_AWAITING_APPROVAL'; name: string; summary: string; dangerous: boolean }
   | { type: 'RESOLVE_APPROVAL'; id: string }
+  | { type: 'CLEAR_APPROVALS' }
   // History
   | { type: 'SET_HISTORY'; messages: Array<{ role: string; text: string; ts?: string }> }
   // User actions
