@@ -94,6 +94,7 @@ export type AppAction =
   | { type: 'TOOL_PENDING'; id: string; name: string; summary: string }
   | { type: 'TOOL_RESOLVED'; id: string; denied: boolean }
   | { type: 'TOOL_AWAITING_APPROVAL'; name: string; summary: string; dangerous: boolean }
+  | { type: 'RESOLVE_APPROVAL'; id: string }
   // History
   | { type: 'SET_HISTORY'; messages: Array<{ role: string; text: string; ts?: string }> }
   // User actions

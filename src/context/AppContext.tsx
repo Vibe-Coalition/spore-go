@@ -238,11 +238,16 @@ function reducer(state: AppState, action: AppAction): AppState {
         messages: state.messages.map(m => {
           if (m.id === `tool-${action.id}` && m.type === 'tool')
             return { ...m, status: action.denied ? 'denied' as const : 'allowed' as const };
-          // Also mark any active approval card as resolved
-          if (m.type === 'approval' && !m.resolved)
-            return { ...m, resolved: true };
           return m;
         }),
+      };
+
+    case 'RESOLVE_APPROVAL':
+      return {
+        ...state,
+        messages: state.messages.map(m =>
+          m.id === action.id && m.type === 'approval' ? { ...m, resolved: true } : m
+        ),
       };
 
     case 'TOOL_AWAITING_APPROVAL':

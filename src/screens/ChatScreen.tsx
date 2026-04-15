@@ -148,13 +148,13 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
             <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
               <TouchableOpacity onPress={() => {
                 ws.current?.send({ type: 'tool:approve', id: 'current', allowed: true });
-                dispatch({ type: 'TOOL_RESOLVED', id: '', denied: false });
+                dispatch({ type: 'RESOLVE_APPROVAL', id: item.id });
               }} style={{ borderWidth: 1, borderColor: t.success, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <Text style={{ color: t.success, fontFamily: MONO, fontSize: 12 }}>[allow]</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
                 ws.current?.send({ type: 'tool:approve', id: 'current', allowed: false });
-                dispatch({ type: 'TOOL_RESOLVED', id: '', denied: true });
+                dispatch({ type: 'RESOLVE_APPROVAL', id: item.id });
               }} style={{ borderWidth: 1, borderColor: t.error, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <Text style={{ color: t.error, fontFamily: MONO, fontSize: 12 }}>[deny]</Text>
               </TouchableOpacity>
