@@ -15,6 +15,23 @@ export interface AnswersData {
   notes: Record<number, string>;
 }
 
+/** Split on ' / ' but not inside parentheses. */
+function splitOptions(s: string): string[] {
+  const options: string[] = [];
+  let depth = 0;
+  let current = '';
+  let i = 0;
+  while (i < s.length) {
+    if (s[i] === '(') { depth++; current += s[i]; }
+    else if (s[i] === ')') { depth = Math.max(0, depth - 1); current += s[i]; }
+    else if (depth === 0 && s.slice(i, i + 3) === ' / ') { options.push(current.trim()); current = ''; i += 3; continue; }
+    else { current += s[i]; }
+    i++;
+  }
+  if (current.trim()) options.push(current.trim());
+  return options.filter(Boolean);
+}
+
 export function parseQuestions(text: string): Question[] {
   // Require QUESTIONS: marker
   const blocks = text.split(/(?:^|\n)\s*QUESTIONS?\s*:\s*\n/i);
@@ -48,14 +65,14 @@ export function parseQuestions(text: string): Question[] {
     // Multi-select: {opt1 / opt2 / opt3}
     const multiMatch = raw.match(/\{([^}]+ \/ [^}]+)\}/);
     if (multiMatch) {
-      options = multiMatch[1].split(' / ').map(o => o.trim()).filter(Boolean);
+      options = splitOptions(multiMatch[1]);
       questionText = raw.slice(0, multiMatch.index).trim().replace(/\?$/, '').trim() + '?';
       multi = true;
     } else {
       // Single-select: [opt1 / opt2 / opt3]
       const singleMatch = raw.match(/\[([^\]]+ \/ [^\]]+)\]/);
       if (singleMatch) {
-        options = singleMatch[1].split(' / ').map(o => o.trim()).filter(Boolean);
+        options = splitOptions(singleMatch[1]);
         questionText = raw.slice(0, singleMatch.index).trim().replace(/\?$/, '').trim() + '?';
       } else {
         questionText = raw.replace(/\?$/, '').trim() + '?';
