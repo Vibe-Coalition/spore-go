@@ -3,8 +3,10 @@ import { ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
 import { AcornWebSocket } from '../services/websocket';
-import { parseQuestions } from '../utils/questions';
-import { hasPlanReady } from '../utils/plan';
+// Questions are now exclusively forwarded from CLI via state:questions events
+// import { parseQuestions } from '../utils/questions';
+// Plan approval is now exclusively forwarded from CLI via plan:show-approval events
+// import { hasPlanReady } from '../utils/plan';
 import { getTheme, DEFAULT_THEME, Theme } from '../themes';
 import {
   Credentials, Session, ChatItem, ToolStatus, UsageInfo,
@@ -154,11 +156,12 @@ function reducer(state: AppState, action: AppAction): AppState {
         newMessages.push({ type: 'status', id: nextId(), text: parts.join('  ·  ') });
       }
 
-      // Parse questions from full response (CLI: parse_questions(response))
-      const questions = fullResponse ? parseQuestions(fullResponse) : [];
+      // Don't parse questions from response — the CLI detects and forwards them
+      // via state:questions. Parsing independently causes duplicate submissions
+      // when both CLI and companion detect the same questions.
 
-      // Parse plan ready
-      const isPlanReady = state.planMode && fullResponse && hasPlanReady(fullResponse);
+      // Don't parse plan ready from response — the CLI detects and forwards
+      // via plan:show-approval. Same reason as questions above.
 
       return {
         ...state,
@@ -168,8 +171,8 @@ function reducer(state: AppState, action: AppAction): AppState {
         isGenerating: false,
         toolStatus: null,
         lastUsage,
-        questions: questions.length > 0 ? questions : null,
-        planApproval: (!questions.length && isPlanReady) ? fullResponse : null,
+        questions: null,
+        planApproval: null,
       };
     }
 
