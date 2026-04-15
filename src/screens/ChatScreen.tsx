@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, KeyboardAvoidingView, Platform, Modal, ScrollView,
@@ -45,10 +45,13 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     };
   }, [session?.key, connState]); // re-run when connection state changes
 
-  useEffect(() => {
-    const timer = setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
-    return () => clearTimeout(timer);
-  }, [messages.length, streamBuffer]);
+  // Auto-scroll: stick to bottom during streaming, animated on new messages
+  const isStreamingRef = useRef(false);
+  isStreamingRef.current = !!streamBuffer || isGenerating;
+
+  const handleContentSizeChange = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: !isStreamingRef.current });
+  }, []);
 
   // Android hardware back button
   useEffect(() => {
@@ -236,6 +239,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
       <FlatList ref={flatListRef} data={messages} keyExtractor={item => item.id} renderItem={renderItem}
         contentContainerStyle={st.messageList}
         keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled"
+        onContentSizeChange={handleContentSizeChange}
         ListFooterComponent={<>
           {streamBuffer ? (
             <View style={[st.panel, { borderColor: t.border }]}>
