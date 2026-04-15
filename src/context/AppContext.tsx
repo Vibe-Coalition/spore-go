@@ -446,6 +446,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       case 'plan:set-mode':
         dispatch({ type: 'SET_PLAN_MODE', on: !!event.enabled });
         break;
+      case 'plan:show-approval':
+        // CLI detected PLAN_READY and is showing approval UI — show ours too
+        dispatch({ type: 'SET_PLAN_APPROVAL', text: event.text });
+        break;
       case 'interactive:resolved':
         console.log('[APP] interactive:resolved received, kind:', (event as any).kind);
         // CLI resolved an interactive prompt — dismiss matching UI on mobile

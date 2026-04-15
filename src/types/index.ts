@@ -62,6 +62,7 @@ export type WsEvent =
   | { type: 'plan:decided'; action: string }
   | { type: 'plan:set-mode'; enabled: boolean }
   | { type: 'interactive:resolved'; kind: string }
+  | { type: 'plan:show-approval'; text: string }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean; cliConnected?: boolean }
   | { type: 'pong' };
