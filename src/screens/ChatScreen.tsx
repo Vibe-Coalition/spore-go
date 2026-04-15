@@ -145,18 +145,32 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
               ⚙ {item.name}{item.dangerous ? ' ⚠ DANGEROUS' : ''}
             </Text>
             <Text style={{ color: t.fg, fontFamily: MONO, fontSize: 11, marginTop: 2 }}>{item.summary}</Text>
-            <View style={{ flexDirection: 'row', gap: 16, marginTop: 6 }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
               <TouchableOpacity onPress={() => {
+                // Approve current + resolve this card
                 ws.current?.send({ type: 'tool:approve', id: 'current', allowed: true });
                 dispatch({ type: 'RESOLVE_APPROVAL', id: item.id });
-              }} style={{ borderWidth: 1, borderColor: t.success, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ color: t.success, fontFamily: MONO, fontSize: 12 }}>[allow]</Text>
+              }} style={{ borderWidth: 1, borderColor: t.success, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ color: t.success, fontFamily: MONO, fontSize: 11 }}>[allow]</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                // Switch CLI to auto mode — resolves ALL pending prompts
+                ws.current?.send({ type: 'perm:set-mode', mode: 'auto' });
+                dispatch({ type: 'SET_PERM_MODE', mode: 'auto' });
+                // Resolve all pending approval cards
+                state.messages.forEach(m => {
+                  if (m.type === 'approval' && !(m as any).resolved) {
+                    dispatch({ type: 'RESOLVE_APPROVAL', id: m.id });
+                  }
+                });
+              }} style={{ borderWidth: 1, borderColor: t.accent, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 11 }}>[allow all]</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
                 ws.current?.send({ type: 'tool:approve', id: 'current', allowed: false });
                 dispatch({ type: 'RESOLVE_APPROVAL', id: item.id });
-              }} style={{ borderWidth: 1, borderColor: t.error, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ color: t.error, fontFamily: MONO, fontSize: 12 }}>[deny]</Text>
+              }} style={{ borderWidth: 1, borderColor: t.error, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ color: t.error, fontFamily: MONO, fontSize: 11 }}>[deny]</Text>
               </TouchableOpacity>
             </View>
           </View>
