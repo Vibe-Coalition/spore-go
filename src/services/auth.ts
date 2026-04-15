@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { Credentials, Session } from '../types';
 
 const CREDS_KEY = 'acorn_credentials';
@@ -9,12 +9,40 @@ function timeoutSignal(ms: number): AbortSignal {
   return controller.signal;
 }
 
+// SecureStore doesn't work on web — fall back to localStorage
+async function _set(key: string, value: string) {
+  if (Platform.OS === 'web') {
+    try { localStorage.setItem(key, value); } catch {}
+  } else {
+    const SecureStore = require('expo-secure-store');
+    await SecureStore.setItemAsync(key, value);
+  }
+}
+
+async function _get(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    try { return localStorage.getItem(key); } catch { return null; }
+  } else {
+    const SecureStore = require('expo-secure-store');
+    return await SecureStore.getItemAsync(key);
+  }
+}
+
+async function _del(key: string) {
+  if (Platform.OS === 'web') {
+    try { localStorage.removeItem(key); } catch {}
+  } else {
+    const SecureStore = require('expo-secure-store');
+    await SecureStore.deleteItemAsync(key);
+  }
+}
+
 export async function saveCredentials(creds: Credentials): Promise<void> {
-  await SecureStore.setItemAsync(CREDS_KEY, JSON.stringify(creds));
+  await _set(CREDS_KEY, JSON.stringify(creds));
 }
 
 export async function loadCredentials(): Promise<Credentials | null> {
-  const raw = await SecureStore.getItemAsync(CREDS_KEY);
+  const raw = await _get(CREDS_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -24,7 +52,7 @@ export async function loadCredentials(): Promise<Credentials | null> {
 }
 
 export async function clearCredentials(): Promise<void> {
-  await SecureStore.deleteItemAsync(CREDS_KEY);
+  await _del(CREDS_KEY);
 }
 
 export async function authenticate(serverUrl: string, username: string, key: string): Promise<string> {
