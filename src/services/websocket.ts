@@ -56,9 +56,9 @@ export class AcornWebSocket {
       this.lastPong = Date.now();
       this.pingTimer = setInterval(() => {
         try { ws.send(JSON.stringify({ type: 'ping' })); } catch {}
-        // If no pong in 35s, connection is dead — force close to trigger reconnect
-        if (Date.now() - this.lastPong > 35000) {
-          console.warn('[AcornWS] no pong in 35s, forcing reconnect');
+        // If no pong in 90s, connection is dead — force close to trigger reconnect
+        if (Date.now() - this.lastPong > 90000) {
+          console.warn('[AcornWS] no pong in 90s, forcing reconnect');
           try { ws.close(); } catch {}
         }
       }, 25000);
