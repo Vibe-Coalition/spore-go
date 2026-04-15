@@ -413,6 +413,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         break;
       case 'session:observe:ok':
         if (event.active) dispatch({ type: 'STREAM_START' });
+        else dispatch({ type: 'STREAM_DONE', text: '', usage: undefined, iterations: undefined, toolUsage: undefined });
         dispatch({ type: 'SET_CLI_CONNECTED', connected: !!event.cliConnected });
         break;
       case 'code:view':
