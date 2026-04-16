@@ -449,6 +449,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'TOOL_AWAITING_APPROVAL', name: event.name, summary: event.summary, dangerous: event.dangerous });
         break;
       case 'perm:current-mode':
+      case 'perm:set-mode':
         if (event.mode === 'ask' || event.mode === 'auto' || event.mode === 'yolo') {
           dispatch({ type: 'SET_PERM_MODE', mode: event.mode });
         }
