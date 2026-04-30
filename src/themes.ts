@@ -1,5 +1,5 @@
 /**
- * Acorn themes — port of acorn/themes.py
+ * Spore Go themes.
  * Simplified color keys for React Native (no Rich/Textual-specific styles).
  */
 

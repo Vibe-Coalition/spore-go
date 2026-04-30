@@ -8,7 +8,7 @@ import { authenticate, saveCredentials, loadCredentials } from '../services/auth
 import { useApp } from '../context/AppContext';
 import { Credentials } from '../types';
 import { MONO_FONT as MONO } from '../context/AppContext';
-import { ACORN_LOGO } from '../utils/logo';
+import { SPORE_GO_LOGO } from '../utils/logo';
 
 export default function AuthScreen() {
   const { dispatch, theme: t } = useApp();
@@ -65,9 +65,9 @@ export default function AuthScreen() {
       <AsciiBackground color={t.fg} />
       <KeyboardAvoidingView style={s.formWrap} behavior="padding">
         <View style={[s.card, { borderColor: t.border, backgroundColor: t.bg + 'f0' }]}>
-          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{ACORN_LOGO}</Text>
-          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginBottom: 16 }}>companion</Text>
-          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>connect to anima server</Text>
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{SPORE_GO_LOGO}</Text>
+          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginBottom: 16 }}>on the go</Text>
+          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>connect to spore core server</Text>
 
           <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>server:</Text>
           <TextInput style={[s.input, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput, fontFamily: MONO }]}
@@ -81,7 +81,7 @@ export default function AuthScreen() {
 
           <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>key:</Text>
           <TextInput style={[s.input, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput, fontFamily: MONO }]}
-            placeholder="acorn_sk_..." placeholderTextColor={t.muted + '66'}
+            placeholder="spore_sk_..." placeholderTextColor={t.muted + '66'}
             value={key} onChangeText={setKey} autoCapitalize="none" autoCorrect={false} secureTextEntry />
 
           {error ? <Text style={{ color: t.error, fontFamily: MONO, fontSize: 11, marginBottom: 8 }}>✗ {error}</Text> : null}

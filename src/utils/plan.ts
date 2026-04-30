@@ -1,5 +1,5 @@
 /**
- * Plan mode constants and utilities — port of acorn/constants.py + plan.py
+ * Plan mode constants and utilities.
  */
 
 export const PLAN_PREFIX =

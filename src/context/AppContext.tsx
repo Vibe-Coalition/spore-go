@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useCal
 import { ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
-import { AcornWebSocket } from '../services/websocket';
+import { SporeGoWebSocket } from '../services/websocket';
 // Questions are now exclusively forwarded from CLI via state:questions events
 // import { parseQuestions } from '../utils/questions';
 // Plan approval is now exclusively forwarded from CLI via plan:show-approval events
@@ -158,7 +158,7 @@ function reducer(state: AppState, action: AppAction): AppState {
 
       // Don't parse questions from response — the CLI detects and forwards them
       // via state:questions. Parsing independently causes duplicate submissions
-      // when both CLI and companion detect the same questions.
+      // when both Spore Code and Spore Go detect the same questions.
 
       // Don't parse plan ready from response — the CLI detects and forwards
       // via plan:show-approval. Same reason as questions above.
@@ -346,7 +346,7 @@ interface AppContextType {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
   theme: Theme;
-  ws: React.MutableRefObject<AcornWebSocket | null>;
+  ws: React.MutableRefObject<SporeGoWebSocket | null>;
 }
 
 const AppContext = createContext<AppContextType>(null!);
@@ -362,7 +362,7 @@ export const MONO_FONT = 'JetBrainsMono';
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [fontsLoaded, setFontsLoaded] = useState(false);
-  const wsRef = useRef<AcornWebSocket | null>(null);
+  const wsRef = useRef<SporeGoWebSocket | null>(null);
   const theme = getTheme(state.themeName);
 
   // Load custom font
@@ -375,7 +375,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Load saved theme on mount
   const themeLoaded = useRef(false);
   useEffect(() => {
-    AsyncStorage.getItem('acorn_theme').then(saved => {
+    AsyncStorage.getItem('spore_go_theme').then(saved => {
       console.log('[Theme] loaded from storage:', saved);
       if (saved) dispatch({ type: 'SET_THEME', name: saved });
       themeLoaded.current = true;
@@ -386,7 +386,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!themeLoaded.current) return;
     console.log('[Theme] saving:', state.themeName);
-    AsyncStorage.setItem('acorn_theme', state.themeName)
+    AsyncStorage.setItem('spore_go_theme', state.themeName)
       .then(() => console.log('[Theme] saved OK'))
       .catch((e) => console.warn('[Theme] save failed:', e));
   }, [state.themeName]);
@@ -502,7 +502,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       wsRef.current.disconnect();
       wsRef.current = null;
     }
-    const ws = new AcornWebSocket(creds.serverUrl, creds.token, handleWsEvent, handleConnState);
+    const ws = new SporeGoWebSocket(creds.serverUrl, creds.token, handleWsEvent, handleConnState);
     wsRef.current = ws;
     ws.connect();
     return () => { ws.disconnect(); wsRef.current = null; };

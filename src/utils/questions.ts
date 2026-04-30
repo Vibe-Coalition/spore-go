@@ -1,5 +1,5 @@
 /**
- * Question parser — port of acorn/questions.py
+ * Question parser.
  * Parses structured questions from QUESTIONS: blocks in agent responses.
  */
 

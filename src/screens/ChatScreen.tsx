@@ -124,7 +124,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
         return (
           <View style={[st.panel, { borderColor: t.border }]}>
             <Text style={[st.panelTitle, { color: t.accent, fontFamily: MONO }]}>
-              ─ acorn {'─'.repeat(42)}
+              ─ spore {'─'.repeat(42)}
             </Text>
             <View style={{ paddingHorizontal: 6 }}>
               <MarkdownText>{item.text}</MarkdownText>
@@ -245,7 +245,7 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
           {streamBuffer ? (
             <View style={[st.panel, { borderColor: t.border }]}>
               <Text style={[st.panelTitle, { color: t.accent, fontFamily: MONO }]}>
-                ─ acorn {'─'.repeat(42)}
+                ─ spore {'─'.repeat(42)}
               </Text>
               <Text style={[st.panelText, { color: t.fg, fontFamily: MONO }]} selectable>
                 {streamBuffer}<Text style={{ color: t.accent }}>▌</Text>

@@ -1,6 +1,6 @@
 /**
- * /test runner for the companion app — exercises all UI features locally
- * without hitting the agent. Mirrors acorn-cli/acorn/commands/test.py.
+ * /test runner for the Spore Go app — exercises all UI features locally
+ * without hitting the agent.
  */
 import React, { useState, useCallback } from 'react';
 import {

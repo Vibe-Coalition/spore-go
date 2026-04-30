@@ -9,7 +9,7 @@ import { listThemes, THEMES } from '../themes';
 import { Session } from '../types';
 
 import { MONO_FONT as MONO } from '../context/AppContext';
-import { ACORN_LOGO } from '../utils/logo';
+import { SPORE_GO_LOGO } from '../utils/logo';
 import AsciiBackground from '../components/AsciiBackground';
 
 function timeAgo(dateStr: string): string {
@@ -89,7 +89,7 @@ export default function SessionListScreen() {
       {/* Header */}
       <View style={[st.header, { borderBottomColor: t.border, backgroundColor: t.bg + 'dd' }]}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5 }} allowFontScaling={false}>{ACORN_LOGO}</Text>
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5 }} allowFontScaling={false}>{SPORE_GO_LOGO}</Text>
         </View>
         <View style={{ flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           <TouchableOpacity onPress={() => setShowThemes(true)}>

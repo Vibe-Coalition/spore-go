@@ -5,7 +5,7 @@ type StateCallback = (state: ConnectionState) => void;
 
 const BACKOFF = [1000, 2000, 4000, 8000, 15000, 30000];
 
-export class AcornWebSocket {
+export class SporeGoWebSocket {
   private ws: WebSocket | null = null;
   private serverUrl: string;
   private token: string;
@@ -46,7 +46,7 @@ export class AcornWebSocket {
       this.ws = ws;
       this.reconnectAttempt = 0;
       this.onStateChange('connected');
-      console.log('[AcornWS] connected to', wsUrl.replace(/token=.*/, 'token=***'));
+      console.log('[SporeGoWS] connected to', wsUrl.replace(/token=.*/, 'token=***'));
       // Flush outbox
       for (const msg of this.outbox) {
         try { ws.send(msg); } catch {}
@@ -58,7 +58,7 @@ export class AcornWebSocket {
         try { ws.send(JSON.stringify({ type: 'ping' })); } catch {}
         // If no pong in 90s, connection is dead — force close to trigger reconnect
         if (Date.now() - this.lastPong > 90000) {
-          console.warn('[AcornWS] no pong in 90s, forcing reconnect');
+          console.warn('[SporeGoWS] no pong in 90s, forcing reconnect');
           try { ws.close(); } catch {}
         }
       }, 25000);
@@ -73,7 +73,7 @@ export class AcornWebSocket {
         }
         this.onEvent(data);
       } catch (e) {
-        console.warn('[AcornWS] onmessage error:', e);
+        console.warn('[SporeGoWS] onmessage error:', e);
       }
     };
 
@@ -85,7 +85,7 @@ export class AcornWebSocket {
     };
 
     ws.onerror = (e) => {
-      console.warn('[AcornWS] error:', (e as any)?.message || 'unknown');
+      console.warn('[SporeGoWS] error:', (e as any)?.message || 'unknown');
     };
   }
 

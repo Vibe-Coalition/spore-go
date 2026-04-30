@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { Credentials, Session } from '../types';
 
-const CREDS_KEY = 'acorn_credentials';
+const CREDS_KEY = 'spore_go_credentials';
 
 function timeoutSignal(ms: number): AbortSignal {
   const controller = new AbortController();
@@ -56,7 +56,7 @@ export async function clearCredentials(): Promise<void> {
 }
 
 export async function authenticate(serverUrl: string, username: string, key: string): Promise<string> {
-  const url = `${serverUrl}/api/acorn/auth`;
+  const url = `${serverUrl}/api/spore-code/auth`;
   let res: Response;
   try {
     res = await fetch(url, {
@@ -102,7 +102,7 @@ export async function refreshToken(creds: Credentials): Promise<Credentials | nu
 export async function fetchSessions(
   creds: Credentials,
 ): Promise<{ sessions: Session[]; credentials: Credentials }> {
-  let res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
+  let res = await fetch(`${creds.serverUrl}/api/spore-code/sessions`, {
     headers: { Authorization: `Bearer ${creds.token}` },
     signal: timeoutSignal(8000),
   });
@@ -112,7 +112,7 @@ export async function fetchSessions(
     const refreshed = await refreshToken(creds);
     if (!refreshed) throw new Error('Re-authentication failed');
     creds = refreshed;
-    res = await fetch(`${creds.serverUrl}/api/acorn/sessions`, {
+    res = await fetch(`${creds.serverUrl}/api/spore-code/sessions`, {
       headers: { Authorization: `Bearer ${creds.token}` },
       signal: timeoutSignal(8000),
     });
