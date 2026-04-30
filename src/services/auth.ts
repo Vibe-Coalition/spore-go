@@ -55,6 +55,8 @@ export async function clearCredentials(): Promise<void> {
   await _del(CREDS_KEY);
 }
 
+// CLI auth: invite-key flow used by the Spore Code Go binary.
+// POST /api/spore-code/auth { username, key } → { token } (Bearer).
 export async function authenticate(serverUrl: string, username: string, key: string): Promise<string> {
   const url = `${serverUrl}/api/spore-code/auth`;
   let res: Response;
@@ -80,13 +82,45 @@ export async function authenticate(serverUrl: string, username: string, key: str
   return data.token;
 }
 
+// Web auth: webapp username/password flow used by the browser graph viewer.
+// POST /api/auth/login?token=1 { username, password } → { token } (the
+// session id, returned in the JSON body for non-browser clients since
+// React Native's fetch strips Set-Cookie from response.headers). The sid
+// is the same value the server's /api/ws-token endpoint hands the browser,
+// so the WS upgrade path is identical for both auth modes.
+export async function webLogin(serverUrl: string, username: string, password: string): Promise<string> {
+  const url = `${serverUrl}/api/auth/login?token=1`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      signal: timeoutSignal(8000),
+    });
+  } catch (e: any) {
+    throw new Error(`Can't reach server: ${e.message || 'network error'}`);
+  }
+  let data: any = {};
+  try { data = await res.json(); } catch {}
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.error || `Login failed (HTTP ${res.status})`);
+  }
+  if (!data.token) {
+    throw new Error('Server did not return a session token (older server build?)');
+  }
+  return data.token;
+}
+
 /**
  * Re-authenticate using stored credentials and save the new token.
  * Returns updated credentials or null if re-auth fails.
  */
 export async function refreshToken(creds: Credentials): Promise<Credentials | null> {
   try {
-    const token = await authenticate(creds.serverUrl, creds.username, creds.key);
+    const token = creds.mode === 'web'
+      ? await webLogin(creds.serverUrl, creds.username, creds.key)
+      : await authenticate(creds.serverUrl, creds.username, creds.key);
     const updated = { ...creds, token };
     await saveCredentials(updated);
     return updated;

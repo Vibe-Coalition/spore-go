@@ -1,10 +1,16 @@
 // ── Data models ──
 
+// 'cli' = Spore Code CLI sessions (invite-key auth, project-scoped chat).
+// 'web' = main web agent (username/password, single-session chat).
+export type AuthMode = 'cli' | 'web';
+
 export interface Credentials {
   serverUrl: string;
   username: string;
+  // For mode='cli', this is the invite key. For mode='web', the password.
   key: string;
   token?: string;
+  mode?: AuthMode;
 }
 
 export interface Session {
