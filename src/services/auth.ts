@@ -55,38 +55,27 @@ export async function clearCredentials(): Promise<void> {
   await _del(CREDS_KEY);
 }
 
-// Single-mode auth: webapp username + password.
-// POST /api/auth/login?token=1 { username, password } → { token } (the
-// session id, returned in the JSON body for non-browser clients since
-// React Native's fetch strips Set-Cookie from response.headers).
-//
-// The same sid:
-//   - authorizes the WS upgrade at /ws?token=<sid>
-//   - is accepted as a Bearer on /api/spore-code/sessions (the server's
-//     handleSessions plugin no longer requires type==='cli'; any session
-//     in the unified _sessions Map with a `user` field is good).
-// So one login covers both the main web agent AND the user's CLI session
-// list — no second auth round-trip needed.
-export async function webLogin(serverUrl: string, username: string, password: string): Promise<string> {
-  const url = `${serverUrl}/api/auth/login?token=1`;
+export async function authenticate(serverUrl: string, username: string, key: string): Promise<string> {
+  const url = `${serverUrl}/api/spore-code/auth`;
   let res: Response;
   try {
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, key }),
       signal: timeoutSignal(8000),
     });
   } catch (e: any) {
     throw new Error(`Can't reach server: ${e.message || 'network error'}`);
   }
-  let data: any = {};
-  try { data = await res.json(); } catch {}
-  if (!res.ok || data.ok === false) {
-    throw new Error(data.error || `Login failed (HTTP ${res.status})`);
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Server returned non-JSON (HTTP ${res.status})`);
   }
-  if (!data.token) {
-    throw new Error('Server did not return a session token (older server build?)');
+  if (!res.ok || !data.token) {
+    throw new Error(data.error || 'Authentication failed');
   }
   return data.token;
 }
@@ -97,8 +86,8 @@ export async function webLogin(serverUrl: string, username: string, password: st
  */
 export async function refreshToken(creds: Credentials): Promise<Credentials | null> {
   try {
-    const token = await webLogin(creds.serverUrl, creds.username, creds.key);
-    const updated = { ...creds, token, mode: 'web' as const };
+    const token = await authenticate(creds.serverUrl, creds.username, creds.key);
+    const updated = { ...creds, token };
     await saveCredentials(updated);
     return updated;
   } catch {

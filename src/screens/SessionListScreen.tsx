@@ -47,18 +47,6 @@ export default function SessionListScreen() {
 
   useEffect(() => { load(); const i = setInterval(() => load(), 10000); return () => clearInterval(i); }, [load]);
 
-  // Synthetic Main Agent row — always present, pinned at the top.
-  // Keyed off `dm:<username>` to match the server's webapp session keying
-  // (see chat.js _currentSessionKeyForPlan).
-  const mainAgent: Session | null = credentials ? {
-    key: 'dm:' + credentials.username,
-    project: 'main agent',
-    created: new Date().toISOString(),
-    updated: new Date().toISOString(),
-    messageCount: 0,
-    active: true,
-  } : null;
-
   const active = sessions.filter(s => s.active);
   const recent = sessions.filter(s => !s.active).slice(0, 20);
 
@@ -121,42 +109,13 @@ export default function SessionListScreen() {
 
       <FlatList data={[...active, ...recent]} keyExtractor={item => item.key} renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={t.accent} />}
-        ListHeaderComponent={(
-          <>
-            {mainAgent ? (
-              <TouchableOpacity
-                style={[
-                  st.mainRow,
-                  { borderColor: t.accent, backgroundColor: t.accent + '12' },
-                ]}
-                onPress={() => dispatch({ type: 'SELECT_SESSION', session: mainAgent })}>
-                <View style={{ marginRight: 10 }}>
-                  <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 16, textAlign: 'center' }}>★</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>
-                    main agent
-                  </Text>
-                  <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 10, marginTop: 2 }}>
-                    web chat · single-session · always live
-                  </Text>
-                </View>
-                <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 9, letterSpacing: 1 }}>
-                  MAIN
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-            {active.length > 0 ? (
-              <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 11, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 }}>
-                ── active ──
-              </Text>
-            ) : null}
-          </>
-        )}
+        ListHeaderComponent={active.length > 0 ? (
+          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 11, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 }}>
+            ── active ──
+          </Text>
+        ) : null}
         ListEmptyComponent={
-          mainAgent
-            ? null
-            : <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12, textAlign: 'center', marginTop: 40 }}>no sessions</Text>
+          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12, textAlign: 'center', marginTop: 40 }}>no sessions</Text>
         }
         ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: t.border, marginHorizontal: 12 }} />}
       />
@@ -201,9 +160,6 @@ const st = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingTop: 56, paddingBottom: 10, borderBottomWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12 },
-  // Main agent row — accented border + tinted background to set it apart
-  // from the regular CLI sessions below.
-  mainRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 14, borderWidth: 1, marginHorizontal: 8, marginTop: 12, marginBottom: 4 },
   modalBg: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   themePanel: { borderWidth: 1, borderTopLeftRadius: 4, borderTopRightRadius: 4, padding: 12, paddingBottom: 16, maxHeight: '70%' },
   themeItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 8 },

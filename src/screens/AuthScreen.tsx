@@ -4,21 +4,17 @@ import {
   ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
 import AsciiBackground from '../components/AsciiBackground';
-import { webLogin, saveCredentials, loadCredentials } from '../services/auth';
+import { authenticate, saveCredentials, loadCredentials } from '../services/auth';
 import { useApp } from '../context/AppContext';
 import { Credentials } from '../types';
 import { MONO_FONT as MONO } from '../context/AppContext';
 import { SPORE_GO_LOGO } from '../utils/logo';
 
-// Single-mode auth: webapp username + password. The returned session id
-// is good for both /api/auth/check (web agent chat) AND
-// /api/spore-code/sessions (CLI session list) — server-side, both endpoints
-// look up the same _sessions Map (web.js: const _sessions = this._webSessions).
 export default function AuthScreen() {
   const { dispatch, theme: t } = useApp();
   const [serverUrl, setServerUrl] = useState('');
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [key, setKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
@@ -28,14 +24,14 @@ export default function AuthScreen() {
       const saved = await loadCredentials();
       if (saved?.key && saved?.serverUrl) {
         try {
-          const token = await webLogin(saved.serverUrl, saved.username, saved.key);
-          const creds: Credentials = { ...saved, token, mode: 'web' };
+          const token = await authenticate(saved.serverUrl, saved.username, saved.key);
+          const creds = { ...saved, token };
           await saveCredentials(creds);
           dispatch({ type: 'AUTH_SUCCESS', credentials: creds });
         } catch {
           setServerUrl(saved.serverUrl);
           setUsername(saved.username);
-          setPassword(saved.key);
+          setKey(saved.key);
         }
       }
       setChecking(false);
@@ -44,11 +40,11 @@ export default function AuthScreen() {
 
   const handleConnect = async () => {
     const url = serverUrl.trim().replace(/\/+$/, '');
-    if (!url || !username.trim() || !password.trim()) { setError('all fields required'); return; }
+    if (!url || !username.trim() || !key.trim()) { setError('all fields required'); return; }
     setLoading(true); setError('');
     try {
-      const token = await webLogin(url, username.trim(), password.trim());
-      const creds: Credentials = { serverUrl: url, username: username.trim(), key: password.trim(), token, mode: 'web' };
+      const token = await authenticate(url, username.trim(), key.trim());
+      const creds: Credentials = { serverUrl: url, username: username.trim(), key: key.trim(), token };
       await saveCredentials(creds);
       dispatch({ type: 'AUTH_SUCCESS', credentials: creds });
     } catch (e: any) { setError(e.message || 'connection failed'); }
@@ -83,10 +79,10 @@ export default function AuthScreen() {
             placeholder="username" placeholderTextColor={t.muted + '66'}
             value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
 
-          <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>password:</Text>
+          <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>key:</Text>
           <TextInput style={[s.input, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput, fontFamily: MONO }]}
-            placeholder="password" placeholderTextColor={t.muted + '66'}
-            value={password} onChangeText={setPassword} autoCapitalize="none" autoCorrect={false} secureTextEntry />
+            placeholder="spore_sk_..." placeholderTextColor={t.muted + '66'}
+            value={key} onChangeText={setKey} autoCapitalize="none" autoCorrect={false} secureTextEntry />
 
           {error ? <Text style={{ color: t.error, fontFamily: MONO, fontSize: 11, marginBottom: 8 }}>✗ {error}</Text> : null}
 
