@@ -25,11 +25,7 @@ function timeAgo(dateStr: string): string {
 export default function SessionListScreen() {
   const { state, dispatch, theme: t } = useApp();
   const { credentials, sessions } = state;
-  // Web mode = webapp/password auth; the cookie sid can't fetch
-  // /api/spore-code/sessions (Bearer-token gated). We skip the fetch and
-  // show only the Main Agent row.
-  const isWebMode = credentials?.mode === 'web';
-  const [loading, setLoading] = useState(sessions.length === 0 && !isWebMode);
+  const [loading, setLoading] = useState(sessions.length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [showThemes, setShowThemes] = useState(false);
@@ -37,7 +33,6 @@ export default function SessionListScreen() {
 
   const load = useCallback(async (isRefresh = false) => {
     if (!credentials || fetchingRef.current) return;
-    if (isWebMode) return; // no CLI sessions to fetch
     fetchingRef.current = true;
     if (isRefresh) setRefreshing(true);
     else if (sessions.length === 0) setLoading(true);
@@ -48,15 +43,14 @@ export default function SessionListScreen() {
       setError('');
     } catch (e: any) { if (sessions.length === 0) setError(e.message); }
     finally { setLoading(false); setRefreshing(false); fetchingRef.current = false; }
-  }, [credentials, sessions.length, dispatch, isWebMode]);
+  }, [credentials, sessions.length, dispatch]);
 
   useEffect(() => { load(); const i = setInterval(() => load(), 10000); return () => clearInterval(i); }, [load]);
 
-  // Synthetic Main Agent row — keyed off `dm:<username>` to match the
-  // server's webapp session keying (see chat.js _currentSessionKeyForPlan).
-  // Only available in web mode (cookie sid auth); CLI-mode users authed
-  // with an invite key don't have webapp permissions.
-  const mainAgent: Session | null = isWebMode && credentials ? {
+  // Synthetic Main Agent row — always present, pinned at the top.
+  // Keyed off `dm:<username>` to match the server's webapp session keying
+  // (see chat.js _currentSessionKeyForPlan).
+  const mainAgent: Session | null = credentials ? {
     key: 'dm:' + credentials.username,
     project: 'main agent',
     created: new Date().toISOString(),

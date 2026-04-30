@@ -4,40 +4,38 @@ import {
   ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
 import AsciiBackground from '../components/AsciiBackground';
-import { authenticate, webLogin, saveCredentials, loadCredentials } from '../services/auth';
+import { webLogin, saveCredentials, loadCredentials } from '../services/auth';
 import { useApp } from '../context/AppContext';
-import { Credentials, AuthMode } from '../types';
+import { Credentials } from '../types';
 import { MONO_FONT as MONO } from '../context/AppContext';
 import { SPORE_GO_LOGO } from '../utils/logo';
 
+// Single-mode auth: webapp username + password. The returned session id
+// is good for both /api/auth/check (web agent chat) AND
+// /api/spore-code/sessions (CLI session list) — server-side, both endpoints
+// look up the same _sessions Map (web.js: const _sessions = this._webSessions).
 export default function AuthScreen() {
   const { dispatch, theme: t } = useApp();
   const [serverUrl, setServerUrl] = useState('');
   const [username, setUsername] = useState('');
-  const [key, setKey] = useState('');
-  const [mode, setMode] = useState<AuthMode>('cli');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
-
-  const authForMode = (m: AuthMode) =>
-    m === 'web' ? webLogin : authenticate;
 
   useEffect(() => {
     (async () => {
       const saved = await loadCredentials();
       if (saved?.key && saved?.serverUrl) {
-        const savedMode: AuthMode = saved.mode === 'web' ? 'web' : 'cli';
         try {
-          const token = await authForMode(savedMode)(saved.serverUrl, saved.username, saved.key);
-          const creds = { ...saved, token, mode: savedMode };
+          const token = await webLogin(saved.serverUrl, saved.username, saved.key);
+          const creds: Credentials = { ...saved, token, mode: 'web' };
           await saveCredentials(creds);
           dispatch({ type: 'AUTH_SUCCESS', credentials: creds });
         } catch {
           setServerUrl(saved.serverUrl);
           setUsername(saved.username);
-          setKey(saved.key);
-          setMode(savedMode);
+          setPassword(saved.key);
         }
       }
       setChecking(false);
@@ -46,11 +44,11 @@ export default function AuthScreen() {
 
   const handleConnect = async () => {
     const url = serverUrl.trim().replace(/\/+$/, '');
-    if (!url || !username.trim() || !key.trim()) { setError('all fields required'); return; }
+    if (!url || !username.trim() || !password.trim()) { setError('all fields required'); return; }
     setLoading(true); setError('');
     try {
-      const token = await authForMode(mode)(url, username.trim(), key.trim());
-      const creds: Credentials = { serverUrl: url, username: username.trim(), key: key.trim(), token, mode };
+      const token = await webLogin(url, username.trim(), password.trim());
+      const creds: Credentials = { serverUrl: url, username: username.trim(), key: password.trim(), token, mode: 'web' };
       await saveCredentials(creds);
       dispatch({ type: 'AUTH_SUCCESS', credentials: creds });
     } catch (e: any) { setError(e.message || 'connection failed'); }
@@ -73,24 +71,7 @@ export default function AuthScreen() {
         <View style={[s.card, { borderColor: t.border, backgroundColor: t.bg + 'f0' }]}>
           <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 7, lineHeight: 8.5, textAlign: 'center', marginBottom: 8 }} allowFontScaling={false}>{SPORE_GO_LOGO}</Text>
           <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, textAlign: 'center', marginBottom: 16 }}>on the go</Text>
-
-          {/* Mode segmented control: CLI sessions vs main web agent. */}
-          <View style={s.segWrap}>
-            <TouchableOpacity
-              style={[s.segBtn, { borderColor: t.border }, mode === 'cli' && { borderColor: t.accent, backgroundColor: t.accent + '22' }]}
-              onPress={() => setMode('cli')}>
-              <Text style={{ color: mode === 'cli' ? t.accent : t.muted, fontFamily: MONO, fontSize: 11 }}>cli session</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[s.segBtn, { borderColor: t.border }, mode === 'web' && { borderColor: t.accent, backgroundColor: t.accent + '22' }]}
-              onPress={() => setMode('web')}>
-              <Text style={{ color: mode === 'web' ? t.accent : t.muted, fontFamily: MONO, fontSize: 11 }}>web chat</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>
-            {mode === 'cli' ? 'connect to spore core (cli sessions)' : 'connect to spore core (main web agent)'}
-          </Text>
+          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 11, marginBottom: 12 }}>connect to spore core server</Text>
 
           <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>server:</Text>
           <TextInput style={[s.input, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput, fontFamily: MONO }]}
@@ -102,10 +83,10 @@ export default function AuthScreen() {
             placeholder="username" placeholderTextColor={t.muted + '66'}
             value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
 
-          <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>{mode === 'web' ? 'password:' : 'key:'}</Text>
+          <Text style={[s.label, { color: t.muted, fontFamily: MONO }]}>password:</Text>
           <TextInput style={[s.input, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput, fontFamily: MONO }]}
-            placeholder={mode === 'web' ? 'password' : 'spore_sk_...'} placeholderTextColor={t.muted + '66'}
-            value={key} onChangeText={setKey} autoCapitalize="none" autoCorrect={false} secureTextEntry />
+            placeholder="password" placeholderTextColor={t.muted + '66'}
+            value={password} onChangeText={setPassword} autoCapitalize="none" autoCorrect={false} secureTextEntry />
 
           {error ? <Text style={{ color: t.error, fontFamily: MONO, fontSize: 11, marginBottom: 8 }}>✗ {error}</Text> : null}
 
@@ -129,6 +110,4 @@ const s = StyleSheet.create({
   label: { fontSize: 11, marginBottom: 4 },
   input: { borderWidth: 1, padding: 10, fontSize: 13, marginBottom: 12 },
   btn: { borderWidth: 1, padding: 12, alignItems: 'center', marginTop: 4 },
-  segWrap: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  segBtn: { flex: 1, borderWidth: 1, paddingVertical: 8, alignItems: 'center' },
 });
