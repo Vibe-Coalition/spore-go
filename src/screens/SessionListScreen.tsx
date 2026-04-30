@@ -25,7 +25,11 @@ function timeAgo(dateStr: string): string {
 export default function SessionListScreen() {
   const { state, dispatch, theme: t } = useApp();
   const { credentials, sessions } = state;
-  const [loading, setLoading] = useState(sessions.length === 0);
+  // Web mode = webapp/password auth; the cookie sid can't fetch
+  // /api/spore-code/sessions (Bearer-token gated). We skip the fetch and
+  // show only the Main Agent row.
+  const isWebMode = credentials?.mode === 'web';
+  const [loading, setLoading] = useState(sessions.length === 0 && !isWebMode);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [showThemes, setShowThemes] = useState(false);
@@ -33,6 +37,7 @@ export default function SessionListScreen() {
 
   const load = useCallback(async (isRefresh = false) => {
     if (!credentials || fetchingRef.current) return;
+    if (isWebMode) return; // no CLI sessions to fetch
     fetchingRef.current = true;
     if (isRefresh) setRefreshing(true);
     else if (sessions.length === 0) setLoading(true);
@@ -43,9 +48,22 @@ export default function SessionListScreen() {
       setError('');
     } catch (e: any) { if (sessions.length === 0) setError(e.message); }
     finally { setLoading(false); setRefreshing(false); fetchingRef.current = false; }
-  }, [credentials, sessions.length, dispatch]);
+  }, [credentials, sessions.length, dispatch, isWebMode]);
 
   useEffect(() => { load(); const i = setInterval(() => load(), 10000); return () => clearInterval(i); }, [load]);
+
+  // Synthetic Main Agent row — keyed off `dm:<username>` to match the
+  // server's webapp session keying (see chat.js _currentSessionKeyForPlan).
+  // Only available in web mode (cookie sid auth); CLI-mode users authed
+  // with an invite key don't have webapp permissions.
+  const mainAgent: Session | null = isWebMode && credentials ? {
+    key: 'dm:' + credentials.username,
+    project: 'main agent',
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+    messageCount: 0,
+    active: true,
+  } : null;
 
   const active = sessions.filter(s => s.active);
   const recent = sessions.filter(s => !s.active).slice(0, 20);
@@ -109,13 +127,42 @@ export default function SessionListScreen() {
 
       <FlatList data={[...active, ...recent]} keyExtractor={item => item.key} renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={t.accent} />}
-        ListHeaderComponent={active.length > 0 ? (
-          <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 11, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 }}>
-            ── active ──
-          </Text>
-        ) : null}
+        ListHeaderComponent={(
+          <>
+            {mainAgent ? (
+              <TouchableOpacity
+                style={[
+                  st.mainRow,
+                  { borderColor: t.accent, backgroundColor: t.accent + '12' },
+                ]}
+                onPress={() => dispatch({ type: 'SELECT_SESSION', session: mainAgent })}>
+                <View style={{ marginRight: 10 }}>
+                  <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 16, textAlign: 'center' }}>★</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>
+                    main agent
+                  </Text>
+                  <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 10, marginTop: 2 }}>
+                    web chat · single-session · always live
+                  </Text>
+                </View>
+                <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 9, letterSpacing: 1 }}>
+                  MAIN
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            {active.length > 0 ? (
+              <Text style={{ color: t.accent, fontFamily: MONO, fontSize: 11, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 }}>
+                ── active ──
+              </Text>
+            ) : null}
+          </>
+        )}
         ListEmptyComponent={
-          <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12, textAlign: 'center', marginTop: 40 }}>no sessions</Text>
+          mainAgent
+            ? null
+            : <Text style={{ color: t.muted, fontFamily: MONO, fontSize: 12, textAlign: 'center', marginTop: 40 }}>no sessions</Text>
         }
         ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: t.border, marginHorizontal: 12 }} />}
       />
@@ -160,6 +207,9 @@ const st = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingTop: 56, paddingBottom: 10, borderBottomWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12 },
+  // Main agent row — accented border + tinted background to set it apart
+  // from the regular CLI sessions below.
+  mainRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 14, borderWidth: 1, marginHorizontal: 8, marginTop: 12, marginBottom: 4 },
   modalBg: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   themePanel: { borderWidth: 1, borderTopLeftRadius: 4, borderTopRightRadius: 4, padding: 12, paddingBottom: 16, maxHeight: '70%' },
   themeItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 8 },

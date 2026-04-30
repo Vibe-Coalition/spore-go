@@ -74,30 +74,8 @@ function reducer(state: AppState, action: AppAction): AppState {
     // Navigation
     case 'SET_SCREEN':
       return { ...state, screen: action.screen };
-    case 'AUTH_SUCCESS': {
-      // Web mode: skip the session list (the main web agent is single-session
-      // per user). The server keys plan/chat off `dm:<username>` for webapp
-      // role sessions — see chat.js _currentSessionKeyForPlan in the browser
-      // client. Drop straight into chat with that synthetic session.
-      if (action.credentials.mode === 'web') {
-        const now = new Date().toISOString();
-        const syntheticSession = {
-          key: 'dm:' + action.credentials.username,
-          project: 'web chat',
-          created: now,
-          updated: now,
-          messageCount: 0,
-          active: true,
-        };
-        return {
-          ...state,
-          credentials: action.credentials,
-          currentSession: syntheticSession,
-          screen: 'chat',
-        };
-      }
+    case 'AUTH_SUCCESS':
       return { ...state, credentials: action.credentials, screen: 'sessions' };
-    }
     case 'LOGOUT':
       return { ...initialState, themeName: state.themeName };
     case 'SELECT_SESSION': {

@@ -53,21 +53,16 @@ export default function ChatScreen({ onShowTests }: { onShowTests?: () => void }
     flatListRef.current?.scrollToEnd({ animated: !isStreamingRef.current });
   }, []);
 
-  // Android hardware back button.
-  // Web mode is single-session — there's no session list to fall back to, so
-  // we let the OS handle back (= minimize app). User logs out via the
-  // actions menu.
-  const isWebMode = state.credentials?.mode === 'web';
+  // Android hardware back button
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (showActions) { setShowActions(false); return true; }
       if (showThemes) { setShowThemes(false); return true; }
-      if (isWebMode) return false;
       dispatch({ type: 'BACK_TO_SESSIONS' });
       return true;
     });
     return () => sub.remove();
-  }, [showActions, showThemes, dispatch, isWebMode]);
+  }, [showActions, showThemes, dispatch]);
 
   if (!session) return null;
 
