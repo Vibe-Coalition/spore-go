@@ -28,8 +28,8 @@ mobile without pretending the phone should replace the full terminal workflow.
 This is a passion project and still under active development. PRs are welcome,
 especially around mobile UX, connection reliability, session routing, theming,
 notifications, and small vibe-coded experiments that make the companion app feel
-more alive. Discord is available for project chat and coordination; a public
-invite link will be added here once it is finalized.
+more alive. Join the [Spore Discord](https://discord.gg/mtsQ6GrdsN) for project
+chat and coordination.
 
 The app is organized around a small screen flow:
 
