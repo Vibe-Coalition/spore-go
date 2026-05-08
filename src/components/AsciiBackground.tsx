@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useMemo, useState, memo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { MONO_FONT as MONO } from '../context/AppContext';
 
-const GLYPHS = '.:-=+*#%@$&?!;/\\|(){}[]<>~^_01';
+const GLYPHS = '.·:;-_';
 
 function generateLayer(total: number): string {
   const arr = new Array(total);
   for (let i = 0; i < total; i++) {
-    arr[i] = Math.random() > 0.45 ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : ' ';
+    arr[i] = Math.random() > 0.88 ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : ' ';
   }
   return arr.join('');
 }
@@ -52,11 +52,11 @@ function AsciiBackground({ color }: { color: string }) {
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
       <Animated.Text style={{
-        fontFamily: MONO, fontSize: 9, lineHeight: 10.5,
+        fontFamily: MONO, fontSize: 8, lineHeight: 10,
         color,
         opacity: fadeAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [0.03, 0.08],
+          outputRange: [0.018, 0.035],
         }),
         position: 'absolute', top: 0, left: 0, right: 0,
       }} allowFontScaling={false}>

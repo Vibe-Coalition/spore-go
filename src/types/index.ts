@@ -3,9 +3,15 @@
 export interface Credentials {
   serverUrl: string;
   username: string;
-  key: string;
+  password: string;
+  /** Legacy saved field from invite-key auth; used only for one-time migration/fallback. */
+  key?: string;
   token?: string;
+  role?: 'creator' | 'admin' | 'webapp' | string;
+  userGraphSlug?: string | null;
 }
+
+export type SessionKind = 'web_control' | 'web_graph' | 'code';
 
 export interface Session {
   key: string;
@@ -14,6 +20,24 @@ export interface Session {
   updated: string;
   messageCount: number;
   active: boolean;
+  kind: SessionKind;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface AskUserOption {
+  label: string;
+  description?: string;
+}
+
+export interface Question {
+  text: string;
+  options: Array<AskUserOption | string> | null;
+  multi: boolean;
+  index: number;
+  qid?: string;
+  mode?: 'single' | 'multi' | 'open' | string;
+  source?: 'ask_user' | 'legacy';
 }
 
 // ── Chat items (what the FlatList renders) ──
@@ -59,12 +83,14 @@ export type WsEvent =
   | { type: 'tool:resolved'; id: string; denied: boolean }
   | { type: 'tool:awaiting-approval'; name: string; summary: string; dangerous: boolean }
   | { type: 'perm:current-mode'; mode: string }
+  | { type: 'perm:set-mode'; mode: string }
   | { type: 'plan:decided'; action: string }
   | { type: 'plan:set-mode'; enabled: boolean }
   | { type: 'interactive:resolved'; kind: string }
   | { type: 'delegate:config'; mode: string; workers: number }
   | { type: 'plan:show-approval'; text: string }
-  | { type: 'state:questions'; questions: Array<{ text: string; options: string[] | null; multi: boolean; index: number }> }
+  | { type: 'state:questions'; questions: Question[] }
+  | { type: 'ask_user'; qid: string; question: string; mode?: 'single' | 'multi' | 'open' | string; options?: AskUserOption[] | null; multi?: boolean }
   | { type: 'chat:user-message'; text: string; userName: string; sessionId?: string }
   | { type: 'session:observe:ok'; sessionId: string; active: boolean; cliConnected?: boolean }
   | { type: 'pong' };
@@ -106,7 +132,7 @@ export type AppAction =
   | { type: 'SEND_MESSAGE'; text: string }
   | { type: 'REMOTE_USER_MESSAGE'; text: string; userName: string }
   | { type: 'CLEAR_MESSAGES' }
-  | { type: 'SET_QUESTIONS'; questions: any[] | null }
+  | { type: 'SET_QUESTIONS'; questions: Question[] | null }
   | { type: 'SET_PLAN_APPROVAL'; text: string | null }
   | { type: 'TOGGLE_PLAN' }
   | { type: 'SET_PLAN_MODE'; on: boolean }

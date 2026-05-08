@@ -35,6 +35,15 @@ export class SporeGoWebSocket {
     this._connect();
   }
 
+  ensureConnected() {
+    if (this.isConnected) return;
+    this.closed = false;
+    if (this.reconnectTimer) return;
+    const state = this.ws?.readyState;
+    if (state === WebSocket.CONNECTING) return;
+    this._connect();
+  }
+
   private _connect() {
     if (this.closed) return;
     this.onStateChange('connecting');
@@ -90,9 +99,13 @@ export class SporeGoWebSocket {
   }
 
   private _scheduleReconnect() {
+    if (this.reconnectTimer) return;
     const delay = BACKOFF[Math.min(this.reconnectAttempt, BACKOFF.length - 1)];
     this.reconnectAttempt++;
-    this.reconnectTimer = setTimeout(() => this._connect(), delay);
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this._connect();
+    }, delay);
   }
 
   get isConnected(): boolean {
@@ -116,8 +129,16 @@ export class SporeGoWebSocket {
     this.send({ type: 'session:unobserve', sessionId });
   }
 
-  sendMessage(content: string, sessionId: string, userName: string) {
-    this.send({ type: 'chat', content, sessionId, userName });
+  sendMessage(content: string, sessionId: string, userName: string, kind: 'web' | 'code' = 'code') {
+    if (kind === 'web') {
+      this.send({ type: 'chat', content, sessionId, userName });
+    } else {
+      this.send({ type: 'chat:message', content, sessionId, userName });
+    }
+  }
+
+  answerAskUser(qid: string, answer: string | string[]) {
+    this.send({ type: 'ask_user_answer', qid, answer });
   }
 
   requestHistory(sessionId: string) {

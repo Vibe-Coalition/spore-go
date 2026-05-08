@@ -1,14 +1,10 @@
 /**
- * Question parser.
- * Parses structured questions from QUESTIONS: blocks in agent responses.
+ * Legacy question parser.
+ * Structured ask_user websocket events are preferred; QUESTIONS: blocks remain a fallback.
  */
 
-export interface Question {
-  text: string;
-  options: string[] | null;
-  multi: boolean;
-  index: number;
-}
+import { Question, AskUserOption } from '../types';
+export type { Question } from '../types';
 
 export interface AnswersData {
   answers: Record<number, string | string[]>;
@@ -30,6 +26,14 @@ function splitOptions(s: string): string[] {
   }
   if (current.trim()) options.push(current.trim());
   return options.filter(Boolean);
+}
+
+function asOptions(options: string[]): AskUserOption[] {
+  return options.map(label => ({ label }));
+}
+
+export function optionLabel(option: AskUserOption | string): string {
+  return typeof option === 'string' ? option : option.label;
 }
 
 export function parseQuestions(text: string): Question[] {
@@ -81,9 +85,11 @@ export function parseQuestions(text: string): Question[] {
 
     questions.push({
       text: questionText,
-      options: options && options.length > 1 ? options : null,
+      options: options && options.length > 1 ? asOptions(options) : null,
       multi,
       index: idx,
+      source: 'legacy',
+      mode: multi ? 'multi' : options ? 'single' : 'open',
     });
   }
 

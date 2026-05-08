@@ -12,7 +12,7 @@ import {
   Credentials, Session, ChatItem, ToolStatus, UsageInfo,
   ConnectionState, PermMode, AppAction, WsEvent,
 } from '../types';
-import { Question } from '../utils/questions';
+import { Question } from '../types';
 
 // ── State shape ──
 
@@ -358,6 +358,7 @@ export function useApp() {
 // ── Provider ──
 
 export const MONO_FONT = 'JetBrainsMono';
+export const BODY_FONT = 'SpaceGrotesk';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -365,10 +366,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const wsRef = useRef<SporeGoWebSocket | null>(null);
   const theme = getTheme(state.themeName);
 
-  // Load custom font
+  // Load custom fonts
   useEffect(() => {
     Font.loadAsync({
-      'JetBrainsMono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
+      SpaceGrotesk: require('../../assets/fonts/SpaceGrotesk.ttf'),
+      JetBrainsMono: require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
     }).then(() => setFontsLoaded(true)).catch(() => setFontsLoaded(true)); // continue even if font fails
   }, []);
 
@@ -472,6 +474,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (event.questions?.length) {
           dispatch({ type: 'SET_QUESTIONS', questions: event.questions });
         }
+        break;
+      case 'ask_user':
+        dispatch({
+          type: 'SET_QUESTIONS',
+          questions: [{
+            text: event.question || '',
+            options: event.options || null,
+            multi: event.mode === 'multi' || event.multi === true,
+            index: 0,
+            qid: event.qid,
+            mode: event.mode,
+            source: 'ask_user',
+          }],
+        });
         break;
       case 'interactive:resolved':
         console.log('[APP] interactive:resolved received, kind:', (event as any).kind);

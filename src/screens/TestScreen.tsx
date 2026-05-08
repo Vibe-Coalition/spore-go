@@ -125,7 +125,7 @@ export default function TestScreen({ onClose }: { onClose: () => void }) {
       assert(names.length === 16, `Expected 16 themes, got ${names.length}`);
       for (const name of names) {
         const th = getTheme(name);
-        assert(th.bg && th.fg && th.accent, `Theme ${name} missing colors`);
+        assert(Boolean(th.bg && th.fg && th.accent), `Theme ${name} missing colors`);
         assert(th.name === name, `Theme name mismatch: ${th.name} vs ${name}`);
       }
       log('themes', true, `${names.length} themes, all valid`);

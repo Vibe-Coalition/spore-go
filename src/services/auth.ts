@@ -14,38 +14,39 @@ async function _set(key: string, value: string) {
   if (Platform.OS === 'web') {
     try { localStorage.setItem(key, value); } catch {}
   } else {
-    const SecureStore = require('expo-secure-store');
+    const SecureStore = await import('expo-secure-store');
     await SecureStore.setItemAsync(key, value);
   }
 }
-
 async function _get(key: string): Promise<string | null> {
   if (Platform.OS === 'web') {
     try { return localStorage.getItem(key); } catch { return null; }
-  } else {
-    const SecureStore = require('expo-secure-store');
-    return await SecureStore.getItemAsync(key);
   }
+  const SecureStore = await import('expo-secure-store');
+  return SecureStore.getItemAsync(key);
 }
-
 async function _del(key: string) {
   if (Platform.OS === 'web') {
     try { localStorage.removeItem(key); } catch {}
   } else {
-    const SecureStore = require('expo-secure-store');
+    const SecureStore = await import('expo-secure-store');
     await SecureStore.deleteItemAsync(key);
   }
 }
 
 export async function saveCredentials(creds: Credentials): Promise<void> {
-  await _set(CREDS_KEY, JSON.stringify(creds));
+  const { key: _legacyKey, ...clean } = creds;
+  await _set(CREDS_KEY, JSON.stringify(clean));
 }
 
 export async function loadCredentials(): Promise<Credentials | null> {
   const raw = await _get(CREDS_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Migrate the old invite-key field into password as a best-effort local upgrade.
+    if (!parsed.password && parsed.key) parsed.password = parsed.key;
+    return parsed;
   } catch {
     return null;
   }
@@ -55,14 +56,28 @@ export async function clearCredentials(): Promise<void> {
   await _del(CREDS_KEY);
 }
 
-export async function authenticate(serverUrl: string, username: string, key: string): Promise<string> {
+export async function checkAuthMetadata(serverUrl: string, token: string): Promise<Pick<Credentials, 'role' | 'userGraphSlug'> & { username?: string }> {
+  const res = await fetch(`${serverUrl}/api/auth/check`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: timeoutSignal(8000),
+  });
+  if (!res.ok) return {};
+  const data = await res.json().catch(() => ({}));
+  return {
+    role: data?.role ? String(data.role) : undefined,
+    username: data?.username ? String(data.username) : undefined,
+    userGraphSlug: data?.userGraphSlug ? String(data.userGraphSlug) : null,
+  };
+}
+
+export async function authenticate(serverUrl: string, username: string, password: string): Promise<Credentials> {
   const url = `${serverUrl}/api/spore-code/auth`;
   let res: Response;
   try {
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, key }),
+      body: JSON.stringify({ username, password }),
       signal: timeoutSignal(8000),
     });
   } catch (e: any) {
@@ -77,7 +92,9 @@ export async function authenticate(serverUrl: string, username: string, key: str
   if (!res.ok || !data.token) {
     throw new Error(data.error || 'Authentication failed');
   }
-  return data.token;
+  const token = String(data.token);
+  const metadata: Pick<Credentials, 'role' | 'userGraphSlug'> & { username?: string } = await checkAuthMetadata(serverUrl, token).catch(() => ({}));
+  return { serverUrl, username: metadata.username || username, password, token, role: metadata.role, userGraphSlug: metadata.userGraphSlug };
 }
 
 /**
@@ -86,13 +103,54 @@ export async function authenticate(serverUrl: string, username: string, key: str
  */
 export async function refreshToken(creds: Credentials): Promise<Credentials | null> {
   try {
-    const token = await authenticate(creds.serverUrl, creds.username, creds.key);
-    const updated = { ...creds, token };
+    const updated = await authenticate(creds.serverUrl, creds.username, creds.password);
     await saveCredentials(updated);
     return updated;
   } catch {
     return null;
   }
+}
+
+function webControlSession(creds: Credentials): Session {
+  const now = new Date().toISOString();
+  const isOperator = creds.role === 'creator' || creds.role === 'admin';
+  return {
+    key: 'web:control-panel',
+    project: 'Web',
+    created: now,
+    updated: now,
+    messageCount: 0,
+    active: true,
+    kind: 'web_control',
+    title: isOperator ? 'Control Panel' : 'My Memory',
+    subtitle: isOperator
+      ? 'Operator web session'
+      : (creds.userGraphSlug ? `Personal memory · ${creds.userGraphSlug}` : 'Personal memory'),
+  };
+}
+
+function normalizeCodeSession(raw: any): Session {
+  const key = String(raw?.key || 'unknown');
+  const project = String(raw?.project || key.split('/')[0] || 'Code session');
+  return {
+    key,
+    project,
+    created: String(raw?.created || ''),
+    updated: String(raw?.updated || raw?.created || ''),
+    messageCount: Number(raw?.messageCount ?? raw?.message_count ?? 0),
+    active: raw?.active !== false,
+    kind: 'code',
+    title: project,
+    subtitle: key,
+  };
+}
+
+function normalizeSessions(data: any, creds: Credentials): Session[] {
+  const rawSessions = Array.isArray(data?.sessions) ? data.sessions : [];
+  const codeSessions = rawSessions
+    .map(normalizeCodeSession)
+    .filter((s: Session) => s.active !== false);
+  return [webControlSession(creds), ...codeSessions];
 }
 
 /**
@@ -122,5 +180,10 @@ export async function fetchSessions(
   if (!res.ok) {
     throw new Error(data.error || 'Failed to fetch sessions');
   }
-  return { sessions: data.sessions || [], credentials: creds };
+  if (creds.token && (!creds.role || creds.userGraphSlug === undefined)) {
+    const metadata: Pick<Credentials, 'role' | 'userGraphSlug'> & { username?: string } = await checkAuthMetadata(creds.serverUrl, creds.token).catch(() => ({}));
+    creds = { ...creds, role: metadata.role || creds.role, userGraphSlug: metadata.userGraphSlug ?? creds.userGraphSlug };
+    await saveCredentials(creds);
+  }
+  return { sessions: normalizeSessions(data, creds), credentials: creds };
 }

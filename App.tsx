@@ -1,38 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
 import AuthScreen from './src/screens/AuthScreen';
 import SessionListScreen from './src/screens/SessionListScreen';
 import ChatScreen from './src/screens/ChatScreen';
-import TestScreen from './src/screens/TestScreen';
 
 function AppContent() {
-  const { state } = useApp();
-  const [showTests, setShowTests] = useState(false);
-
-  if (showTests) {
-    return (
-      <>
-        <StatusBar style="light" />
-        <TestScreen onClose={() => setShowTests(false)} />
-      </>
-    );
-  }
-
+  const { state, theme } = useApp();
   return (
-    <>
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: theme.bg }}>
       <StatusBar style="light" />
       {state.screen === 'auth' && <AuthScreen />}
       {state.screen === 'sessions' && <SessionListScreen />}
-      {state.screen === 'chat' && <ChatScreen onShowTests={() => setShowTests(true)} />}
-    </>
+      {state.screen === 'chat' && <ChatScreen />}
+    </SafeAreaView>
   );
 }
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <SafeAreaProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </SafeAreaProvider>
   );
 }
