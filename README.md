@@ -1,4 +1,5 @@
 <p align="center">
+  <img src="assets/spore-logo.svg" alt="Spore logo" width="96" height="96"><br>
   <strong>Spore Go</strong><br>
   A mobile companion for staying connected to your Spore sessions.
 </p>
