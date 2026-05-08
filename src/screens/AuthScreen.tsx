@@ -87,7 +87,7 @@ export default function AuthScreen() {
 
           <Text style={[s.label, { color: t.muted }]}>server url</Text>
           <TextInput style={[s.input, { color: t.fg, borderColor: t.border, backgroundColor: t.bgInput }]}
-            placeholder="http://192.168.1.10:18810" placeholderTextColor={t.muted + '66'}
+            placeholder="https://spore.example.com" placeholderTextColor={t.muted + '66'}
             value={serverUrl} onChangeText={setServerUrl} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
 
           <Text style={[s.label, { color: t.muted }]}>user</Text>
