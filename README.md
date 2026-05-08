@@ -1,8 +1,34 @@
-# spore-go
+<p align="center">
+  <strong>Spore Go</strong><br>
+  A mobile companion for staying connected to your Spore sessions.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Vibe-Coalition"><img alt="Vibe Coalition" src="https://img.shields.io/badge/Vibe%20Coalition-Spore%20Go-ff7a1a?style=for-the-badge"></a>
+  <img alt="Status" src="https://img.shields.io/badge/status-in%20active%20development-2f855a?style=for-the-badge">
+  <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2563eb?style=for-the-badge">
+  <img alt="Vibe code welcome" src="https://img.shields.io/badge/vibe%20code-welcome-7c3aed?style=for-the-badge">
+</p>
+
+# Spore Go
 
 ## What this app is
 
-`spore-go` is an Expo / React Native TypeScript client for Spore Code sessions. It connects to a Spore Core server, authenticates a user, lists available code sessions, and opens a realtime chat surface for working with an agent from a phone, emulator, or web build.
+`spore-go` is an Expo / React Native TypeScript client for Spore sessions. It
+connects to a Spore Core server, authenticates a user, lists available sessions,
+and opens a realtime chat surface for working with an agent from a phone,
+emulator, or web build.
+
+Spore Go is part of the Vibe Coalition Spore stack. The goal is simple: keep
+the agent close when you are away from the desktop. Check in on a coding
+session, answer a clarification, approve a plan, or talk to your own graph from
+mobile without pretending the phone should replace the full terminal workflow.
+
+This is a passion project and still under active development. PRs are welcome,
+especially around mobile UX, connection reliability, session routing, theming,
+notifications, and small vibe-coded experiments that make the companion app feel
+more alive. Discord is available for project chat and coordination; a public
+invite link will be added here once it is finalized.
 
 The app is organized around a small screen flow:
 
