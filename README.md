@@ -7,6 +7,7 @@
 <p align="center">
   <a href="https://github.com/Vibe-Coalition"><img alt="Vibe Coalition" src="https://img.shields.io/badge/Vibe%20Coalition-Spore%20Go-ff7a1a?style=for-the-badge"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-in%20active%20development-2f855a?style=for-the-badge">
+  <img alt="License" src="https://img.shields.io/badge/license-PolyForm%20NC%201.0.0-c8762c?style=for-the-badge">
   <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2563eb?style=for-the-badge">
   <a href="https://discord.gg/mtsQ6GrdsN"><img alt="Discord" src="https://img.shields.io/badge/Discord-join%20chat-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
   <img alt="Vibe code welcome" src="https://img.shields.io/badge/vibe%20code-welcome-7c3aed?style=for-the-badge">
@@ -31,6 +32,14 @@ especially around mobile UX, connection reliability, session routing, theming,
 notifications, and small vibe-coded experiments that make the companion app feel
 more alive. Join the [Spore Discord](https://discord.gg/mtsQ6GrdsN) for project
 chat and coordination.
+
+## License
+
+Spore Go is source-available under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Personal, hobby, educational,
+research, nonprofit, and other noncommercial uses are permitted. Commercial use
+requires a separate commercial license from Vibe Coalition; see
+[COMMERCIAL.md](COMMERCIAL.md).
 
 The app is organized around a small screen flow:
 

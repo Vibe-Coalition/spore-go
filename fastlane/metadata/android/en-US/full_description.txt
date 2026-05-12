@@ -1,0 +1,5 @@
+Spore Go is the Android companion for Spore. Connect to your Spore Core server, open your available sessions, follow agent progress, answer questions, and keep working from your phone when you are away from the desktop.
+
+The app is built for people running their own Spore stack. It focuses on realtime session chat, account authentication, saved server credentials, and quick access to web or coding sessions tied to your Spore user.
+
+Spore Go is part of the Vibe Coalition Spore project and is still under active development.

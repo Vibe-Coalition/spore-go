@@ -1,6 +1,7 @@
 {
   "name": "spore-go",
   "version": "1.0.0",
+  "description": "Mobile companion for Spore sessions and agents.",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -31,5 +32,6 @@
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
   },
+  "license": "SEE LICENSE IN LICENSE",
   "private": true
 }
